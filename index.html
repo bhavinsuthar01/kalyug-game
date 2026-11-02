@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>KALYUG: THE LAST STAND - Mumbai</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', Impact, Roboto, Arial, sans-serif;
+        }
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #050505;
+            color: #ffffff;
+            touch-action: none;
+        }
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Portrait Orientation Lock */
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #09090b;
+            z-index: 99999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        @media screen and (orientation: portrait) {
+            #portrait-warning { display: flex; }
+        }
+
+        /* 1. SPLASH SCREEN */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: radial-gradient(circle at center, #3b1106 0%, #050505 85%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .logo-art-card {
+            position: relative;
+            width: 520px;
+            height: 290px;
+            border: 4px solid #f59e0b;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(245, 158, 11, 0.65);
+        }
+        #logo-art-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 2. ANIMATED TITLE SCREEN */
+        #title-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 450;
+            background: radial-gradient(circle, rgba(20,5,5,0.92), #000000);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .gta-title {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #f8fafc;
+            -webkit-text-stroke: 3px #000;
+            text-shadow: 0 0 30px #ef4444, 5px 5px 0px #f59e0b;
+            animation: gtaFade 1.2s ease-out forwards;
+            text-align: center;
+        }
+        .gta-subtitle {
+            font-size: 1.4rem;
+            color: #fde047;
+            letter-spacing: 8px;
+            margin-top: 10px;
+            font-weight: 800;
+            text-shadow: 2px 2px 0 #000;
+        }
+        @keyframes gtaFade { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: none; } }
+
+        /* 3. LOBBY UI */
+        #lobby-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            pointer-events: none;
+        }
+        .lobby-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.92), transparent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 22px;
+            pointer-events: auto;
+        }
+        .brand-badge {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #fde047;
+            text-shadow: 2px 2px 0 #000, 0 0 12px #f59e0b;
+            letter-spacing: 1px;
+        }
+        .top-stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .pill-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #22c55e;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 900;
+            color: #4ade80;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+        .top-btn {
+            background: rgba(30, 41, 59, 0.92);
+            border: 1.5px solid #cbd5e1;
+            color: #fff;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 0.82rem;
+            transition: 0.2s;
+        }
+        .top-btn:hover, .top-btn:active {
+            background: #f59e0b;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .lobby-left-panel {
+            position: absolute;
+            left: 22px;
+            top: 76px;
+            width: 280px;
+            background: rgba(10, 15, 28, 0.88);
+            border-left: 4px solid #f59e0b;
+            border-radius: 10px;
+            padding: 14px;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+        }
+        .char-option {
+            padding: 8px 11px;
+            margin: 6px 0;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .char-option.active {
+            background: rgba(245, 158, 11, 0.28);
+            border-color: #f59e0b;
+        }
+        .char-option h4 { font-size: 0.92rem; color: #fff; }
+        .char-option p { font-size: 0.72rem; color: #cbd5e1; margin-top: 2px; }
+
+        .lobby-play-area {
+            position: absolute;
+            right: 28px;
+            bottom: 28px;
+            pointer-events: auto;
+            text-align: right;
+        }
+        .play-btn {
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            border: 2px solid #fef08a;
+            color: #fff;
+            font-size: 1.75rem;
+            font-weight: 900;
+            padding: 14px 46px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 0 35px rgba(220, 38, 38, 0.8);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        .play-btn:active { transform: scale(0.95); }
+
+        /* MODALS */
+        .modal-window {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 350;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
+        .modal-box {
+            width: 560px;
+            max-width: 92vw;
+            background: #0f172a;
+            border: 2px solid #f59e0b;
+            border-radius: 14px;
+            padding: 22px;
+        }
+        .shop-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.06);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        /* 4. 15-SECOND STORY MODE CUTSCENE */
+        #story-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 26px;
+        }
+        .tv-frame {
+            width: 78%;
+            height: 65%;
+            margin: 0 auto;
+            border: 6px solid #334155;
+            border-radius: 12px;
+            background: radial-gradient(circle, #1e293b, #020617);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.35);
+        }
+        .breaking-banner {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            background: #dc2626;
+            color: #fff;
+            font-weight: 900;
+            padding: 7px;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+        }
+        #story-text {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #f8fafc;
+            max-width: 86%;
+        }
+        .story-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 78%;
+            margin: 0 auto;
+        }
+        .skip-btn {
+            background: #f59e0b;
+            color: #000;
+            border: 2px solid #fff;
+            padding: 10px 26px;
+            font-weight: 900;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* 5. IN-GAME HUD & TOUCH SWIPE CAMERA ZONE */
+        #hud-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            display: none;
+            pointer-events: none;
+        }
+        #touch-look-zone {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: auto;
+        }
+        .radar-box {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            width: 142px;
+            height: 142px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 3px solid #000;
+            outline: 2.5px solid #f59e0b;
+            border-radius: 50%;
+            overflow: hidden;
+            pointer-events: auto;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        }
+        #radar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .mission-panel {
+            position: absolute;
+            top: 14px;
+            left: 170px;
+            background: rgba(0, 0, 0, 0.82);
+            border-left: 4px solid #f59e0b;
+            padding: 10px 16px;
+            border-radius: 8px;
+            max-width: 420px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        .mission-panel h4 {
+            color: #fde047;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .mission-panel p {
+            font-size: 0.84rem;
+            color: #fff;
+            margin-top: 3px;
+        }
+        .status-panel {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            text-align: right;
+            pointer-events: auto;
+            z-index: 10;
+            background: rgba(0,0,0,0.78);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.2);
+        }
+        .hp-bar-outer {
+            width: 165px;
+            height: 14px;
+            background: #450a0a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+            border: 2px solid #000;
+        }
+        #hp-bar-inner {
+            width: 100%;
+            height: 100%;
+            background: #dc2626;
+            transition: width 0.2s;
+        }
+
+        /* Left D-PAD + RUN Button Above Forward */
+        .dpad-cluster {
+            position: absolute;
+            bottom: 22px;
+            left: 22px;
+            width: 175px;
+            height: 235px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        .ctrl-btn {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            background: rgba(15, 23, 42, 0.78);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            color: #fff;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            font-size: 0.68rem;
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            touch-action: none;
+        }
+        .ctrl-btn:active, .ctrl-btn.pressed {
+            background: #f59e0b;
+            border-color: #fff;
+            color: #000;
+            transform: scale(0.92);
+        }
+        #btn-run {
+            top: 0;
+            left: 59px;
+            background: rgba(234, 88, 12, 0.88);
+            border-color: #fed7aa;
+        }
+        #btn-up { top: 64px; left: 59px; }
+        #btn-down { bottom: 0; left: 59px; }
+        #btn-left { top: 120px; left: 0; }
+        #btn-right { top: 120px; right: 0; }
+
+        /* Center Vehicle Enter / Exit Button */
+        #btn-vehicle {
+            position: absolute;
+            bottom: 125px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border: 3px solid #bfdbfe;
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 900;
+            font-size: 1rem;
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.85);
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 20;
+            display: none;
+            animation: pulseBtn 0.8s infinite alternate;
+        }
+        @keyframes pulseBtn {
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.08); }
+        }
+
+        /* Right Action Cluster */
+        .action-cluster {
+            position: absolute;
+            bottom: 22px;
+            right: 22px;
+            width: 240px;
+            height: 190px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+        .act-btn {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            color: #fff;
+            cursor: pointer;
+            touch-action: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.65);
+        }
+        .act-btn:active { transform: scale(0.9); }
+
+        #btn-attack {
+            width: 80px;
+            height: 80px;
+            right: 8px;
+            bottom: 8px;
+            background: radial-gradient(circle, #ef4444, #991b1b);
+            border: 3px solid #fecaca;
+            font-size: 0.82rem;
+        }
+        #btn-jump {
+            width: 60px;
+            height: 60px;
+            right: 100px;
+            bottom: 10px;
+            background: radial-gradient(circle, #3b82f6, #1d4ed8);
+            border: 2px solid #bfdbfe;
+            font-size: 0.72rem;
+        }
+        #btn-pick {
+            width: 60px;
+            height: 60px;
+            right: 96px;
+            bottom: 84px;
+            background: radial-gradient(circle, #22c55e, #15803d);
+            border: 2px solid #bbf7d0;
+            font-size: 0.7rem;
+        }
+        #btn-drop {
+            width: 54px;
+            height: 54px;
+            right: 14px;
+            bottom: 100px;
+            background: radial-gradient(circle, #f59e0b, #b45309);
+            border: 2px solid #fef08a;
+            font-size: 0.68rem;
+        }
+        #btn-speaker {
+            width: 62px;
+            height: 62px;
+            right: 170px;
+            bottom: 50px;
+            background: radial-gradient(circle, #a855f7, #6b21a8);
+            border: 2px solid #e9d5ff;
+            font-size: 0.66rem;
+            display: none;
+        }
+        #btn-zoom {
+            width: 62px;
+            height: 62px;
+            right: 170px;
+            bottom: 50px;
+            background: radial-gradient(circle, #06b6d4, #0e7490);
+            border: 2px solid #a5f3fc;
+            font-size: 0.66rem;
+            display: none;
+        }
+
+        #toast-banner {
+            position: fixed;
+            top: 82px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(245, 158, 11, 0.96);
+            color: #000;
+            padding: 10px 26px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            font-weight: 900;
+            z-index: 480;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.8);
+        }
+            /* ===== DRIVING HUD, STEERING WHEEL, PEDALS ===== */
+        #speedo { position:absolute; top:14px; left:50%; transform:translateX(-50%); display:none; text-align:center; background:rgba(0,0,0,0.8); border:2px solid #f59e0b; border-radius:12px; padding:6px 16px; pointer-events:auto; z-index:12; }
+        #speedo .row { display:flex; align-items:baseline; justify-content:center; gap:6px; }
+        #speed-val { font-size:2rem; font-weight:900; color:#fde047; line-height:1; }
+        #speedo small { font-size:0.7rem; color:#cbd5e1; }
+        #gear-val { font-weight:900; color:#4ade80; font-size:1rem; }
+        #btn-cam { display:none; margin-top:6px; }
+        #steering-wheel { position:absolute; left:-70px; bottom:-60px; width:300px; height:300px; display:none; pointer-events:auto; z-index:10; touch-action:none; }
+        #steering-wheel svg { width:100%; height:100%; filter:drop-shadow(0 6px 14px rgba(0,0,0,0.7)); }
+        #pedals, #bike-pedals { position:absolute; display:none; pointer-events:auto; z-index:10; }
+        #pedals { bottom:225px; right:22px; gap:12px; flex-direction:row; }
+        #bike-pedals { right:22px; bottom:225px; flex-direction:column; gap:10px; }
+        #pedals .ctrl-btn, #bike-pedals .ctrl-btn { position:relative; width:92px; height:92px; left:auto; right:auto; top:auto; bottom:auto; }
+        #bike-pedals .ctrl-btn { width:76px; height:76px; }
+        body.veh-car #speedo, body.veh-bike #speedo { display:block; }
+        body.veh-car #steering-wheel { display:block; }
+        body.veh-car #pedals { display:flex; }
+        body.veh-car .dpad-cluster { display:none; }
+        body.veh-car #btn-cam { display:inline-block; }
+        body.veh-car #btn-vehicle { top:92px; bottom:auto; }
+        body.veh-bike #bike-pedals { display:flex; }
+        body.veh-bike #btn-run, body.veh-bike #btn-up, body.veh-bike #btn-down { display:none; }
+
+        /* ===== RESPONSIVE: PHONE & SMALL SCREENS ===== */
+        @media (max-width: 1000px) {
+            .gta-title { font-size: 2.6rem; }
+            .lobby-top-bar { height: 52px; padding: 0 12px; }
+            .top-stats { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+            .top-btn { padding: 5px 9px; font-size: 0.72rem; }
+            .lobby-left-panel { width: 210px; top: 70px; padding: 8px; max-height: calc(100vh - 150px); overflow-y: auto; }
+            .char-option { padding: 5px 8px; margin: 4px 0; }
+            .char-option p { font-size: 0.65rem; }
+            .play-btn { font-size: 1.15rem; padding: 10px 24px; }
+            .modal-box { padding: 14px; max-height: 92vh; overflow-y: auto; }
+            .radar-box { width: 104px; height: 104px; top: 8px; left: 8px; }
+            .mission-panel { left: 120px; top: 8px; max-width: 250px; padding: 6px 10px; }
+            .mission-panel h4 { font-size: 0.72rem; }
+            .mission-panel p { font-size: 0.72rem; }
+            .status-panel { top: 8px; right: 8px; padding: 6px 10px; }
+            .hp-bar-outer { width: 120px; }
+            .dpad-cluster { transform: scale(0.78); transform-origin: left bottom; bottom: 8px; left: 8px; }
+            .action-cluster { transform: scale(0.78); transform-origin: right bottom; bottom: 8px; right: 8px; }
+            #pedals { transform: scale(0.8); transform-origin: right bottom; bottom: 170px; right: 8px; }
+            #bike-pedals { transform: scale(0.8); transform-origin: right bottom; right: 8px; bottom: 170px; }
+            #steering-wheel { width: 240px; height: 240px; bottom: -50px; left: -40px; }
+            #speedo { top: 8px; }
+            #btn-vehicle { bottom: 110px; font-size: 0.85rem; padding: 9px 20px; }
+        }
+        @media (max-width: 640px) {
+            .gta-title { font-size: 1.9rem; letter-spacing: 2px; }
+            .lobby-top-bar { height: auto; padding: 6px 8px; flex-direction: column; gap: 4px; }
+            .brand-badge { font-size: 0.9rem; }
+            .lobby-left-panel { left: 8px; top: 92px; width: 180px; }
+            .lobby-play-area { right: 8px; bottom: 8px; }
+            .play-btn { font-size: 1rem; padding: 8px 16px; }
+            .shop-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="portrait-warning">
+        <h2 style="color:#f59e0b; margin-bottom:10px;">🔄 PLEASE ROTATE YOUR DEVICE</h2>
+        <p>"KALYUG: THE LAST STAND" is designed for Horizontal Landscape Mode.</p>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+    <div id="toast-banner">MISSION COMPLETE!</div>
+    <div id="map-load-status" style="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99998;display:block;max-width:92vw;padding:10px 16px;border:1px solid #f59e0b;border-radius:10px;background:rgba(0,0,0,.88);color:#fde047;font:800 13px Segoe UI,Arial;text-align:center;box-shadow:0 4px 20px #000;">Preparing Grove Street map...</div>
+
+    <!-- 1. SPLASH LOGO SCREEN -->
+    <div id="splash-screen">
+        <div class="logo-art-card">
+            <canvas id="logo-art-canvas" width="520" height="290"></canvas>
+        </div>
+        <p style="margin-top:14px; color:#fde047; font-weight:900; letter-spacing:3px;">LOADING MUMBAI WORLD...</p>
+    </div>
+
+    <!-- 2. ANIMATED GAME TITLE -->
+    <div id="title-screen">
+        <div class="gta-title">KALYUG: THE LAST STAND</div>
+        <div class="gta-subtitle">MUMBAI • 100 LEVELS</div>
+    </div>
+
+    <!-- 3. 3D GAME LOBBY -->
+    <div id="lobby-screen">
+        <div class="lobby-top-bar">
+            <div class="brand-badge">🔥 KALYUG: THE LAST STAND</div>
+            <div class="top-stats">
+                <div class="pill-box">₹<span id="lobby-cash">500</span></div>
+                <div class="pill-box" style="border-color:#f59e0b; color:#fde047;">LEVEL <span id="lobby-lvl">1</span>/100</div>
+                <button class="top-btn" onclick="toggleModal('shop-modal', true)">🏏 WEAPONS</button>
+                <button class="top-btn" onclick="toggleModal('settings-modal', true)">⚙️ MAP & SETTINGS</button>
+            </div>
+        </div>
+
+        <div class="lobby-left-panel">
+            <h3 style="color:#fde047; font-size:0.88rem; margin-bottom:8px; text-transform:uppercase;">Select Character & Ability</h3>
+            <div class="char-option active" onclick="selectHero(0, this)">
+                <h4>🕶️ Salman Bhai</h4>
+                <p>Muscular Heavy Build & 2x Melee Knockout Power</p>
+            </div>
+            <div class="char-option" onclick="selectHero(1, this)">
+                <h4>♟️ Samay Raina</h4>
+                <p>Speaker Button: Sing & Comedy to Gather Crowd</p>
+            </div>
+            <div class="char-option" onclick="selectHero(2, this)">
+                <h4>🚙 Elvish Yadav</h4>
+                <p>Super Fast Sprint Speed & Vehicle Master</p>
+            </div>
+            <div class="char-option" onclick="selectHero(3, this)">
+                <h4>📸 Sourav Joshi</h4>
+                <p>Clear Night Vision & Far Zoom Scope Button</p>
+            </div>
+            <div class="char-option" onclick="selectHero(4, this)">
+                <h4>🇮🇳 Custom Survivor</h4>
+                <p>Balanced All-Rounder Street Fighter</p>
+            </div>
+        </div>
+
+        <div class="lobby-play-area">
+            <div style="margin-bottom:8px; font-size:0.85rem; color:#fde047; font-weight:800; text-shadow:1px 1px 0 #000;">
+                📍 PHOENIX PALLADIUM MALL, LOWER PAREL, MUMBAI
+            </div>
+            <button class="play-btn" onclick="launchLevelStory()">▶ PLAY LEVEL <span id="play-btn-lvl">1</span></button>
+        </div>
+    </div>
+
+    <!-- WEAPON SHOP MODAL -->
+    <div id="shop-modal" class="modal-window">
+        <div class="modal-box">
+            <h2 style="color:#f59e0b; margin-bottom:8px;">🏏 AMMU-NATION & MUMBAI ARMORY</h2>
+            <p style="font-size:0.82rem; color:#cbd5e1; margin-bottom:12px;">Unlock the Hockey Stick for ₹300 in Level 1 using your ₹500 starting cash.</p>
+            <div class="shop-row">
+                <div>
+                    <h4>🏑 Pro Wooden Hockey Stick (Level 1 Required)</h4>
+                    <p style="font-size:0.75rem; color:#94a3b8;">Damage: +40 | Smooth Curved Blade</p>
+                </div>
+                <button class="top-btn" onclick="buyWeapon('Hockey Stick', 300)">BUY ₹300</button>
+            </div>
+            <div class="shop-row">
+                <div>
+                    <h4>🏏 Spiked Cricket Bat</h4>
+                    <p style="font-size:0.75rem; color:#94a3b8;">Damage: +75 | Heavy Knockback</p>
+                </div>
+                <button class="top-btn" onclick="buyWeapon('Spiked Bat', 800)">BUY ₹800</button>
+            </div>
+            <div class="shop-row">
+                <div>
+                    <h4>🔫 Custom Desi Pistol</h4>
+                    <p style="font-size:0.75rem; color:#94a3b8;">Damage: +140 | High Impact</p>
+                </div>
+                <button class="top-btn" onclick="buyWeapon('Custom Pistol', 1500)">BUY ₹1500</button>
+            </div>
+            <div style="text-align:right; margin-top:14px;">
+                <button class="top-btn" onclick="toggleModal('shop-modal', false)">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS & MUMBAI LANDMARK TELEPORT MODAL -->
+    <div id="settings-modal" class="modal-window">
+        <div class="modal-box">
+            <h2 style="color:#f59e0b; margin-bottom:10px;">⚙️ MAP & LEVEL SELECTOR</h2>
+            <p style="font-size:0.8rem; color:#cbd5e1; margin-bottom:10px;">
+                • <b>Smooth Organic Graphics:</b> High-segment rounded characters, curved roofs, arched domes & sculpted Indian vehicles<br>
+                • <b>Curved Roads & Footpath AI:</b> Winding spline roads with 85+ NPCs walking strictly on raised footpaths<br>
+                • <b>100% Indian Fleet:</b> Thar, Scorpio-N, Tata Safari, Maruti Swift, Ambassador, Kaali-Peeli Taxi, Auto-Rickshaw, BEST Bus, Indian Truck, Bullet Bike & Activa
+            </p>
+            <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:8px; margin-bottom:10px;">
+                <label style="font-weight:800; font-size:0.85rem; color:#fde047;">Teleport to Mumbai Landmarks:</label>
+                <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                    <button class="top-btn" onclick="teleportTo(0, 0)">Phoenix Mall Center</button>
+                    <button class="top-btn" onclick="teleportTo(105, 0)">Juhu Cul-de-Sac</button>
+                    <button class="top-btn" onclick="teleportTo(-65, 95)">Juhu Beach & Ferris Wheel</button>
+                    <button class="top-btn" onclick="teleportTo(55, -95)">Glen Park Bridge & Pond</button>
+                    <button class="top-btn" onclick="teleportTo(-90, -90)">Area 69 Bio-Lab</button>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06); padding:10px; border-radius:8px; margin-bottom:14px;">
+                <label style="font-weight:800; font-size:0.85rem; color:#fde047;">Jump Directly to Any Level (1-100):</label>
+                <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                    <button class="top-btn" onclick="jumpToLevel(1)">Lvl 1 (Mall & Hockey)</button>
+                    <button class="top-btn" onclick="jumpToLevel(2)">Lvl 2 (Cafe TV News)</button>
+                    <button class="top-btn" onclick="jumpToLevel(3)">Lvl 3 (Ration Prep)</button>
+                    <button class="top-btn" onclick="jumpToLevel(4)">Lvl 4 (Zombie Wave)</button>
+                    <button class="top-btn" onclick="jumpToLevel(100)">Lvl 100 (Scientist Finale)</button>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <button class="top-btn" onclick="toggleModal('settings-modal', false)">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 15-SECOND STORY MODE CUTSCENE -->
+    <div id="story-screen">
+        <div class="tv-frame">
+            <div class="breaking-banner">📺 MUMBAI LIVE • MISSION BRIEFING</div>
+            <h2 id="story-title" style="color:#fde047; margin-bottom:12px; font-size:1.55rem;">LEVEL 1</h2>
+            <p id="story-text"></p>
+        </div>
+        <div class="story-bottom">
+            <div style="font-size:1.1rem; font-weight:800; color:#94a3b8;">
+                Mission starts in <span id="story-timer" style="color:#f59e0b;">15</span> seconds...
+            </div>
+            <button class="skip-btn" onclick="startGameplayNow()">SKIP CUTSCENE ⏭️</button>
+        </div>
+    </div>
+
+    <!-- 5. ACTIVE GAMEPLAY HUD -->
+    <div id="hud-screen">
+        <div id="touch-look-zone"></div>
+
+        <div class="radar-box">
+            <canvas id="radar-canvas" width="142" height="142"></canvas>
+        </div>
+
+        <div class="mission-panel">
+            <h4 id="hud-lvl-title">LEVEL 1: PEACEFUL MUMBAI</h4>
+            <p id="hud-task-desc">Task: Follow the curved footpath to the Armory Shop (Green Marker) to get your Hockey Stick.</p>
+        </div>
+
+        <div class="status-panel">
+            <div style="font-weight:900; color:#4ade80; font-size:1.05rem; text-shadow:1px 1px 0 #000;">
+                ₹<span id="hud-cash">500</span> &nbsp;|&nbsp; <span id="hud-weapon" style="color:#fde047;">Bare Hands</span>
+            </div>
+            <div style="font-size:0.76rem; color:#cbd5e1; margin-top:2px;">
+                BAG: <span id="hud-bag" style="color:#38bdf8;">Empty</span>
+            </div>
+            <div class="hp-bar-outer">
+                <div id="hp-bar-inner"></div>
+            </div>
+            <div style="margin-top:6px; display:flex; gap:6px; justify-content:flex-end;">
+                <button class="top-btn" style="padding:4px 9px; font-size:0.72rem;" onclick="toggleModal('shop-modal', true)">SHOP</button>
+                <button class="top-btn" style="padding:4px 9px; font-size:0.72rem;" onclick="toggleModal('settings-modal', true)">MAP</button>
+                <button class="top-btn" style="padding:4px 9px; font-size:0.72rem;" onclick="openLobbyScreen()">LOBBY</button>
+            </div>
+        </div>
+
+        <!-- Driving HUD: speedometer + camera toggle (car & bike) -->
+        <div id="speedo">
+            <div class="row"><span id="gear-val">N</span><span id="speed-val">0</span><small>km/h</small></div>
+            <button class="top-btn" id="btn-cam" onclick="toggleCamMode()">📷 Cabin</button>
+        </div>
+
+        <!-- Car steering wheel (drag to steer) -->
+        <div id="steering-wheel">
+            <svg viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="92" fill="none" stroke="#111827" stroke-width="16"/>
+                <rect x="20" y="92" width="160" height="16" rx="8" fill="#1f2937"/>
+                <rect x="92" y="96" width="16" height="90" rx="6" fill="#1f2937"/>
+                <circle cx="100" cy="100" r="26" fill="#374151"/>
+                <circle cx="100" cy="100" r="9" fill="#f59e0b"/>
+                <rect x="95" y="4" width="10" height="18" rx="3" fill="#f59e0b"/>
+            </svg>
+        </div>
+
+        <!-- Car pedals (left side) -->
+        <div id="pedals">
+            <div class="ctrl-btn" id="btn-brake">⬇<span>BRAKE /<br>REVERSE</span></div>
+            <div class="ctrl-btn" id="btn-gas">⬆<span>GAS</span></div>
+        </div>
+
+        <!-- Bike throttle & brake/reverse (right side) -->
+        <div id="bike-pedals">
+            <div class="ctrl-btn" id="btn-bgas">⬆<span>GAS</span></div>
+            <div class="ctrl-btn" id="btn-bbrake">⬇<span>BRAKE /<br>REVERSE</span></div>
+        </div>
+
+        <!-- Center Dynamic Vehicle Enter/Exit Button -->
+        <button id="btn-vehicle" onclick="toggleVehicleMount()">🚙 ENTER VEHICLE</button>
+
+        <!-- Left Side Movement Cluster (RUN button directly above FORWARD) -->
+        <div class="dpad-cluster">
+            <div class="ctrl-btn" id="btn-run">🏃<span>RUN</span></div>
+            <div class="ctrl-btn" id="btn-up">▲<span>FORWARD</span></div>
+            <div class="ctrl-btn" id="btn-down">▼<span>BACK</span></div>
+            <div class="ctrl-btn" id="btn-left">◀<span>LEFT</span></div>
+            <div class="ctrl-btn" id="btn-right">▶<span>RIGHT</span></div>
+        </div>
+
+        <!-- Right Side Action Cluster -->
+        <div class="action-cluster">
+            <div class="act-btn" id="btn-speaker" onclick="triggerSamaySpeaker()">🔊<span>SPEAKER</span></div>
+            <div class="act-btn" id="btn-zoom" onclick="toggleSouravZoom()">🔭<span>ZOOM</span></div>
+            <div class="act-btn" id="btn-pick" onclick="doPickAction()">✋<span>PICK/USE</span></div>
+            <div class="act-btn" id="btn-drop" onclick="doDropAction()">📦<span>DROP</span></div>
+            <div class="act-btn" id="btn-jump" onclick="doJumpAction()">🚀<span>JUMP</span></div>
+            <div class="act-btn" id="btn-attack" onclick="doAttackAction()">👊<span>ATTACK</span></div>
+        </div>
+    </div>
+
+    <script>
+        /*************************************************************************
+         * KALYUG: THE LAST STAND - SMOOTH CURVED MUMBAI × INDIA ENGINE
+         * 1. Non-Boxy Organic Sculpted Humans (Spherical Heads, Rounded Limbs)
+         * 2. Curved & Winding CatmullRom Spline Road Network + Raised Footpaths
+         * 3. 85+ Pedestrians Walking Strictly on Curved Footpaths (Never Middle of Road)
+         * 4. 100% Indian Vehicles (Thar, Scorpio-N, Safari, Swift, Ambassador, Auto, etc.)
+         * 5. Full Mumbai Landmarks (Juhu, Bollywood Hills, Pier, Glen Park, Area 69)
+         *************************************************************************/
+        const GameState = {
+            mode: 'SPLASH',
+            level: 1,
+            cash: 500,
+            hp: 100,
+            maxHp: 100,
+            heroIndex: 0,
+            weapon: 'Bare Hands',
+            hasHockey: false,
+            bagItem: null,
+            storyTimer: 15,
+            mapLoaded: false,
+            storyInterval: null,
+            killsThisLevel: 0,
+            requiredKills: 0,
+            hasAntidote: false,
+            drivingVehicle: null,
+            nearbyVehicle: null,
+            samayAttractTimer: 0,
+            souravZoomActive: false,
+            heroes: [
+                {
+                    name: 'Salman Bhai',
+                    jacket: '#1e3a8a', shirt: '#ffffff', pants: '#1e293b', skin: '#e0ac69',
+                    shades: true, beard: false, dmg: 95, speed: 0.26, runMultiplier: 1.65,
+                    scaleX: 1.26, scaleY: 1.08
+                },
+                {
+                    name: 'Samay Raina',
+                    jacket: '#581c87', shirt: '#facc15', pants: '#0f172a', skin: '#f1c27d',
+                    shades: false, beard: false, dmg: 42, speed: 0.25, runMultiplier: 1.65,
+                    scaleX: 1.0, scaleY: 1.0
+                },
+                {
+                    name: 'Elvish Yadav',
+                    jacket: '#14532d', shirt: '#000000', pants: '#111827', skin: '#e0ac69',
+                    shades: true, beard: true, dmg: 50, speed: 0.35, runMultiplier: 2.25,
+                    scaleX: 1.05, scaleY: 1.04
+                },
+                {
+                    name: 'Sourav Joshi',
+                    jacket: '#c2410c', shirt: '#ffffff', pants: '#1e293b', skin: '#f1c27d',
+                    shades: false, beard: false, dmg: 40, speed: 0.26, runMultiplier: 1.7,
+                    scaleX: 0.96, scaleY: 0.98
+                },
+                {
+                    name: 'Custom Survivor',
+                    jacket: '#991b1b', shirt: '#1f2937', pants: '#090d16', skin: '#d2996c',
+                    shades: true, beard: true, dmg: 50, speed: 0.26, runMultiplier: 1.75,
+                    scaleX: 1.04, scaleY: 1.0
+                }
+            ]
+        };
+
+        const Controls = { up: false, down: false, left: false, right: false, run: false };
+
+        let scene, camera, renderer, clock, hemiLight, sunLight, groundPlane, ferrisWheelGroup;
+        let playerGroup, playerRig;
+        let groveStreetGroup = null;
+        // Keep the GLB beside index.html in the GitHub Pages published site.
+        // A relative URL also works when the repository is published under /REPO-NAME/.
+        const GROVE_STREET_GLB_URLS = [
+            new URL('./san_andreas_full_la_map.glb', document.baseURI).href
+        ];
+        let groveMapLoadStarted = false;
+        let groveMapLoadFailed = false;
+        let playerYaw = 0, playerPitch = 0.22, playerVelY = 0, isGrounded = true;
+let carVel = 0, wheelAngle = 0, wheelDragging = false, camMode = 'third';
+        let npcs = [], zombies = [], vehicles = [], worldPickups = [];
+        let roadCurves = []; // Winding CatmullRom spline curves for roads & footpaths
+        let missionBeacon, doctorNPC;
+
+        // Key Mumbai + Mumbai Story Landmarks
+        const Landmarks = {
+            mall:        { x: 0, z: 0 },
+            shop:        { x: -38, z: -42 },
+            cafe:        { x: 42, z: -38 },
+            groveStreet: { x: 112, z: 0 },
+            glenPark:    { x: 55, z: -98 },
+            santaMaria:  { x: -70, z: 105 },
+            vinewood:    { x: 0, z: -165 },
+            lab:         { x: -92, z: -92 },
+            hospital:    { x: 85, z: 78 }
+        };
+
+        window.addEventListener('load', () => {
+            drawSplashLogoArt();
+            initCurvedSanAndreasWorld();
+            bindTouchAndKeyboardControls();
+            runSplashToLobbyFlow();
+            animate();
+        });
+
+        /* =========================================================
+           1. SPLASH LOGO ART
+           ========================================================= */
+        function drawSplashLogoArt() {
+            const c = document.getElementById('logo-art-canvas');
+            const ctx = c.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 0, 290);
+            grad.addColorStop(0, '#450a0a');
+            grad.addColorStop(0.5, '#ea580c');
+            grad.addColorStop(1, '#090d16');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 520, 290);
+
+            ctx.fillStyle = '#0f172a';
+            const heights = [120, 165, 95, 185, 140, 110, 175, 130, 155, 105];
+            heights.forEach((h, i) => {
+                ctx.fillRect(i * 52, 240 - h, 46, h);
+                ctx.fillStyle = '#fde047';
+                for (let wy = 250 - h; wy < 225; wy += 18) {
+                    ctx.fillRect(i * 52 + 8, wy, 8, 10);
+                    ctx.fillRect(i * 52 + 26, wy, 8, 10);
+                }
+                ctx.fillStyle = '#0f172a';
+            });
+
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.roundRect(70, 145, 78, 98, 18);
+            ctx.fill();
+            ctx.fillStyle = '#e0ac69';
+            ctx.beginPath();
+            ctx.arc(109, 115, 29, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#111';
+            ctx.fillRect(90, 106, 17, 10);
+            ctx.fillRect(112, 106, 17, 10);
+
+            ctx.fillStyle = '#14532d';
+            ctx.beginPath();
+            ctx.roundRect(375, 155, 68, 90, 16);
+            ctx.fill();
+            ctx.fillStyle = '#65a30d';
+            ctx.beginPath();
+            ctx.arc(408, 122, 27, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(398, 118, 5, 0, Math.PI * 2);
+            ctx.arc(418, 118, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = '900 22px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('KALYUG: THE LAST STAND', 260, 34);
+        }
+
+        function setMapLoadStatus(message, isError = false) {
+            const el = document.getElementById('map-load-status');
+            if (el) {
+                el.textContent = message;
+                el.style.color = isError ? '#fecaca' : '#fde047';
+                el.style.borderColor = isError ? '#ef4444' : '#f59e0b';
+                el.style.display = 'block';
+            }
+            const splashLabel = document.querySelector('#splash-screen p');
+            if (splashLabel) splashLabel.textContent = message;
+        }
+
+        function runSplashToLobbyFlow() {
+            // Keep the loading screen visible until the model is actually decoded.
+            const poll = setInterval(() => {
+                if (GameState.mapLoaded || groveMapLoadFailed) {
+                    clearInterval(poll);
+                    const sp = document.getElementById('splash-screen');
+                    sp.style.opacity = '0';
+                    setTimeout(() => {
+                        sp.style.display = 'none';
+                        const ts = document.getElementById('title-screen');
+                        ts.style.display = 'flex';
+                        GameState.mode = 'TITLE';
+                        setTimeout(() => {
+                            ts.style.display = 'none';
+                            openLobbyScreen();
+                            if (GameState.mapLoaded) {
+                                const status = document.getElementById('map-load-status');
+                                if (status) status.style.display = 'none';
+                            }
+                        }, 1200);
+                    }, 350);
+                }
+            }, 250);
+        }
+
+        function openLobbyScreen() {
+            if (GameState.drivingVehicle) exitVehicle();
+            GameState.mode = 'LOBBY';
+            if (lobbyGroup) lobbyGroup.visible = true;
+            playerGroup.visible = false;
+            document.getElementById('hud-screen').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'block';
+            playerGroup.position.set(0, 0, 0);
+            playerYaw = 0;
+            updateUIStats();
+        }
+
+        function teleportTo(x, z) {
+            if (GameState.drivingVehicle) exitVehicle();
+            playerGroup.position.set(x, 0, z);
+            toggleModal('settings-modal', false);
+            showBanner(`📍 Teleported to Mumbai Zone (${x}, ${z})`);
+        }
+
+        /* =========================================================
+           SMOOTH EXTRUDED ROUNDED GEOMETRY HELPER (NO BOXY SHAPES)
+           ========================================================= */
+        function createSmoothRoundedBlock(w, h, d, radius, material, curveSegments = 10) {
+            const shape = new THREE.Shape();
+            const hw = w / 2 - radius;
+            const hh = h / 2 - radius;
+            shape.moveTo(-hw, -hh - radius);
+            shape.lineTo(hw, -hh - radius);
+            shape.quadraticCurveTo(hw + radius, -hh - radius, hw + radius, -hh);
+            shape.lineTo(hw + radius, hh);
+            shape.quadraticCurveTo(hw + radius, hh + radius, hw, hh + radius);
+            shape.lineTo(-hw, hh + radius);
+            shape.quadraticCurveTo(-hw - radius, hh + radius, -hw - radius, hh);
+            shape.lineTo(-hw - radius, -hh);
+            shape.quadraticCurveTo(-hw - radius, -hh - radius, -hw, -hh - radius);
+
+            const extrudeSettings = {
+                depth: d - radius * 2,
+                bevelEnabled: true,
+                bevelSegments: 6,
+                steps: 1,
+                bevelSize: radius,
+                bevelThickness: radius,
+                curveSegments
+            };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.center();
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        /* =========================================================
+           PROCEDURAL HD TEXTURES (SPHERICAL FACES, JACKETS, BUILDINGS)
+           ========================================================= */
+        function createSphericalFaceTexture(skinHex, hasShades, hasBeard, isZombie = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = isZombie ? '#65a30d' : skinHex;
+            ctx.fillRect(0, 0, 512, 256);
+
+            // Center of equirectangular UV is x=256, y=128
+            // Hair at top & back of sphere
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, 512, 68);
+            ctx.fillRect(0, 0, 135, 195);
+            ctx.fillRect(377, 0, 135, 195);
+
+            // Eyebrows
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(212, 86, 34, 8);
+            ctx.fillRect(266, 86, 34, 8);
+
+            if (isZombie) {
+                ctx.fillStyle = '#450a0a';
+                ctx.fillRect(214, 98, 30, 18);
+                ctx.fillRect(268, 98, 30, 18);
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(229, 107, 6, 0, Math.PI * 2);
+                ctx.arc(283, 107, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (hasShades) {
+                // Smooth Aviator Sunglasses
+                ctx.fillStyle = '#090d16';
+                ctx.beginPath();
+                ctx.roundRect(208, 94, 42, 26, 8);
+                ctx.roundRect(262, 94, 42, 26, 8);
+                ctx.fill();
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(229, 106, 14, 9, 0, 0, Math.PI * 2);
+                ctx.ellipse(283, 106, 14, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(229, 106, 6, 0, Math.PI * 2);
+                ctx.arc(283, 106, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (hasBeard && !isZombie) {
+                ctx.fillStyle = 'rgba(17, 24, 39, 0.82)';
+                ctx.beginPath();
+                ctx.roundRect(195, 146, 122, 68, 22);
+                ctx.fill();
+            }
+
+            // Lips / Mouth
+            ctx.fillStyle = isZombie ? '#450a0a' : '#991b1b';
+            ctx.beginPath();
+            ctx.roundRect(232, 162, 48, 12, 5);
+            ctx.fill();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createTorsoJacketTexture(jacketHex, shirtHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = jacketHex;
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = shirtHex;
+            ctx.fillRect(92, 0, 72, 256);
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.fillRect(86, 0, 6, 256);
+            ctx.fillRect(164, 0, 6, 256);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createRealisticBuildingTexture(baseColor, signText = '') {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = baseColor;
+            ctx.fillRect(0, 0, 512, 512);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            for (let y = 0; y < 512; y += 64) {
+                ctx.fillRect(0, y, 512, 8);
+            }
+
+            // Arched / Rounded Top Windows for Smooth Architecture
+            for (let y = 18; y < 420; y += 64) {
+                for (let x = 24; x < 480; x += 60) {
+                    const isLit = Math.random() > 0.35;
+                    ctx.fillStyle = isLit ? '#fef08a' : '#0f172a';
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, 36, 42, [12, 12, 2, 2]);
+                    ctx.fill();
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                }
+            }
+
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 438, 512, 74);
+
+            if (signText) {
+                ctx.fillStyle = '#b91c1c';
+                ctx.beginPath();
+                ctx.roundRect(16, 394, 480, 46, 12);
+                ctx.fill();
+                ctx.strokeStyle = '#fde047';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '900 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(signText, 256, 426);
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        /* =========================================================
+           SMOOTH ORGANIC HUMAN CHARACTER BUILDER (NO BOXY LIMBS/HEADS)
+           ========================================================= */
+        function createRealHumanCharacter(cfg, scale = 1, isZombie = false) {
+            const root = new THREE.Group();
+
+            const skinColor = isZombie ? 0x65a30d : cfg.skin;
+            const skinMat = new THREE.MeshToonMaterial({ color: skinColor, });
+            const pantsMat = new THREE.MeshToonMaterial({ color: cfg.pants || '#1e293b', });
+            const shoeMat = new THREE.MeshToonMaterial({ color: 0x111827, });
+
+            const torsoTex = createTorsoJacketTexture(cfg.jacket || '#1e3a8a', cfg.shirt || '#ffffff');
+            const torsoMat = new THREE.MeshToonMaterial({ map: torsoTex, });
+
+            const faceTex = createSphericalFaceTexture(cfg.skin || '#e0ac69', cfg.shades, cfg.beard, isZombie);
+            const headMat = new THREE.MeshToonMaterial({ map: faceTex, });
+
+            // 1. Smooth Rounded Pelvis & Hips
+            const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.52, 20, 16), pantsMat);
+            pelvis.scale.set(1.0, 0.65, 0.72);
+            pelvis.position.y = 1.62;
+            root.add(pelvis);
+
+            // 2. Smooth Sculpted Athletic V-Taper Torso (24-segment Cylinder + Rounded Chest Domes)
+            const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.48, 1.38, 24), torsoMat);
+            chest.scale.set(1.0, 1.0, 0.68);
+            chest.position.y = 2.48;
+            chest.castShadow = true;
+            root.add(chest);
+
+            const shoulderUpper = new THREE.Mesh(new THREE.SphereGeometry(0.61, 20, 16), torsoMat);
+            shoulderUpper.scale.set(1.02, 0.38, 0.68);
+            shoulderUpper.position.y = 3.12;
+            root.add(shoulderUpper);
+
+            // 3. Smooth Cylindrical Neck
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.24, 0.36, 18), skinMat);
+            neck.position.y = 3.35;
+            root.add(neck);
+
+            // 4. Smooth Ellipsoid Human Head + Rounded Nose + Sculpted Hair Dome
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 3.84;
+
+            const headSphere = new THREE.Mesh(new THREE.SphereGeometry(0.45, 28, 24), headMat);
+            headSphere.scale.set(0.92, 1.08, 0.96);
+            headSphere.rotation.y = -Math.PI / 2; // Align face texture to +Z front
+            headSphere.castShadow = true;
+            headGroup.add(headSphere);
+
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 12), skinMat);
+            nose.scale.set(0.85, 1.1, 1.45);
+            nose.position.set(0, -0.02, 0.43);
+            headGroup.add(nose);
+
+            const hairDome = new THREE.Mesh(
+                new THREE.SphereGeometry(0.47, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.55),
+                new THREE.MeshToonMaterial({ color: 0x090d16, })
+            );
+            hairDome.scale.set(0.94, 1.08, 0.98);
+            hairDome.position.y = 0.04;
+            headGroup.add(hairDome);
+
+            root.add(headGroup);
+
+            // 5. Smooth Articulated Arms (Spherical Deltoid -> Tapered Bicep -> Spherical Elbow -> Forearm -> Rounded Fist)
+            function buildSmoothArm(isLeft) {
+                const pivot = new THREE.Group();
+                pivot.position.set(isLeft ? -0.74 : 0.74, 3.04, 0);
+
+                const deltoid = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 16), torsoMat);
+                pivot.add(deltoid);
+
+                const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.155, 0.64, 18), torsoMat);
+                upper.position.y = -0.34;
+                upper.castShadow = true;
+
+                const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 14), skinMat);
+                elbow.position.y = -0.66;
+
+                const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.125, 0.6, 18), skinMat);
+                forearm.position.y = -0.96;
+
+                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 14), skinMat);
+                hand.scale.set(0.85, 1.15, 0.95);
+                hand.position.y = -1.32;
+
+                pivot.add(upper, elbow, forearm, hand);
+                return pivot;
+            }
+
+            const leftArm = buildSmoothArm(true);
+            const rightArm = buildSmoothArm(false);
+            root.add(leftArm, rightArm);
+
+            // 6. Smooth Articulated Legs (Tapered Thigh -> Spherical Knee -> Sculpted Calf -> Rounded Sneaker)
+            function buildSmoothLeg(isLeft) {
+                const pivot = new THREE.Group();
+                pivot.position.set(isLeft ? -0.31 : 0.31, 1.55, 0);
+
+                const hipJoint = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 14), pantsMat);
+                const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.185, 0.76, 18), pantsMat);
+                thigh.position.y = -0.38;
+                thigh.castShadow = true;
+
+                const knee = new THREE.Mesh(new THREE.SphereGeometry(0.185, 16, 14), pantsMat);
+                knee.position.y = -0.76;
+
+                const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.74, 18), pantsMat);
+                calf.position.y = -1.12;
+
+                // Smooth Rounded Sneaker Shoe
+                const sneaker = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 14), shoeMat);
+                sneaker.scale.set(0.75, 0.52, 1.45);
+                sneaker.position.set(0, -1.48, 0.14);
+
+                pivot.add(hipJoint, thigh, knee, calf, sneaker);
+                return pivot;
+            }
+
+            const leftLeg = buildSmoothLeg(true);
+            const rightLeg = buildSmoothLeg(false);
+            root.add(leftLeg, rightLeg);
+
+            const sx = (cfg.scaleX || 1) * scale;
+            const sy = (cfg.scaleY || 1) * scale;
+            root.scale.set(sx, sy, sx);
+            root.userData = { leftArm, rightArm, leftLeg, rightLeg, headGroup };
+            return root;
+        }
+
+        /* =========================================================
+           SMOOTH CURVED 100% INDIAN VEHICLES FLEET WITH DRIVERS
+           (Thar, Scorpio-N, Tata Safari, Maruti Swift, Ambassador,
+            Kaali-Peeli Taxi, Auto-Rickshaw, BEST Bus, Truck, Bullet, Activa)
+           ========================================================= */
+        function createPaintMat(colorHex) {
+            return new THREE.MeshPhysicalMaterial({
+                color: colorHex,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.12
+            });
+        }
+
+        function createIndianVehicleMesh(type) {
+            const vGroup = new THREE.Group();
+            const tireMat = new THREE.MeshToonMaterial({ color: 0x111111, });
+            const rimMat = new THREE.MeshToonMaterial({ color: 0xe2e8f0, });
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x0f172a,
+                clearcoat: 1.0,
+                transparent: true,
+                opacity: 0.76
+            });
+
+            function addSmoothWheels(wX, wZ, radius = 0.85) {
+                const tireGeo = new THREE.CylinderGeometry(radius, radius, 0.52, 24);
+                tireGeo.rotateZ(Math.PI / 2);
+                const rimGeo = new THREE.CylinderGeometry(radius * 0.56, radius * 0.56, 0.55, 16);
+                rimGeo.rotateZ(Math.PI / 2);
+
+                [[-wX, wZ], [wX, wZ], [-wX, -wZ], [wX, -wZ]].forEach(([x, z]) => {
+                    const w = new THREE.Mesh(tireGeo, tireMat);
+                    w.position.set(x, radius, z);
+                    w.castShadow = true;
+                    const r = new THREE.Mesh(rimGeo, rimMat);
+                    r.position.set(x, radius, z);
+                    vGroup.add(w, r);
+                });
+            }
+
+            function addRoundHeadlights(halfW, frontZ, backZ, yPos = 1.65) {
+                const hlMat = new THREE.MeshToonMaterial({ color: 0xffffff, emissive: 0xfef08a, });
+                const tlMat = new THREE.MeshToonMaterial({ color: 0xff0000, emissive: 0xef4444, });
+                const hlGeo = new THREE.SphereGeometry(0.28, 16, 12);
+                [-halfW, halfW].forEach(x => {
+                    const hl = new THREE.Mesh(hlGeo, hlMat);
+                    hl.scale.set(1, 1, 0.4);
+                    hl.position.set(x, yPos, frontZ);
+                    const tl = new THREE.Mesh(hlGeo, tlMat);
+                    tl.scale.set(1.2, 0.8, 0.4);
+                    tl.position.set(x, yPos, backZ);
+                    vGroup.add(hl, tl);
+                });
+            }
+
+            const npcDriver = createRealHumanCharacter({
+                jacket: '#334155', shirt: '#ffffff', pants: '#0f172a', skin: '#e0ac69'
+            }, 0.84, false);
+            npcDriver.position.set(0.55, 1.05, 0.35);
+            vGroup.add(npcDriver);
+
+            let speed = 0.38;
+            let hitRadius = 5.5;
+
+            if (type === 'MAHINDRA THAR') {
+                const lower = createSmoothRoundedBlock(4.3, 2.0, 8.0, 0.45, createPaintMat(0x991b1b));
+                lower.position.y = 1.95;
+                const cabin = createSmoothRoundedBlock(4.0, 2.0, 5.0, 0.4, new THREE.MeshToonMaterial({ color: 0x111827, }));
+                cabin.position.set(0, 3.7, -0.7);
+                const glass = createSmoothRoundedBlock(3.8, 1.4, 5.15, 0.25, glassMat);
+                glass.position.set(0, 3.65, -0.65);
+                vGroup.add(lower, cabin, glass);
+                addSmoothWheels(2.15, 2.55, 1.02);
+                addRoundHeadlights(1.35, 4.02, -4.02, 2.05);
+                speed = 0.44;
+            } else if (type === 'MAHINDRA SCORPIO-N' || type === 'TATA SAFARI') {
+                const isSafari = type === 'TATA SAFARI';
+                const col = isSafari ? 0x1d4ed8 : 0x090d16;
+                const lower = createSmoothRoundedBlock(4.4, 1.95, 8.8, 0.52, createPaintMat(col));
+                lower.position.y = 1.85;
+                const cabin = createSmoothRoundedBlock(3.9, 1.75, 5.6, 0.55, glassMat);
+                cabin.position.set(0, 3.45, -0.5);
+                const roofCap = createSmoothRoundedBlock(3.8, 0.35, 5.4, 0.15, createPaintMat(col));
+                roofCap.position.set(0, 4.3, -0.5);
+                vGroup.add(lower, cabin, roofCap);
+                addSmoothWheels(2.15, 2.8, 0.94);
+                addRoundHeadlights(1.5, 4.42, -4.42, 1.95);
+                speed = 0.46;
+            } else if (type === 'MARUTI SWIFT') {
+                // Curvy Aerodynamic Indian Hatchback
+                const lower = createSmoothRoundedBlock(3.9, 1.6, 7.2, 0.58, createPaintMat(0xf8fafc));
+                lower.position.y = 1.5;
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(2.1, 24, 18), glassMat);
+                dome.scale.set(0.88, 0.68, 1.15);
+                dome.position.set(0, 2.55, -0.35);
+                vGroup.add(lower, dome);
+                addSmoothWheels(1.9, 2.25, 0.78);
+                addRoundHeadlights(1.35, 3.6, -3.6, 1.55);
+                speed = 0.42;
+            } else if (type === 'HINDUSTAN AMBASSADOR' || type === 'KAALI-PEELI TAXI') {
+                // Iconic Curvy Round-Bonnet Indian Ambassador / Mumbai Taxi
+                const isTaxi = type === 'KAALI-PEELI TAXI';
+                const lower = createSmoothRoundedBlock(4.0, 1.65, 7.8, 0.65, createPaintMat(isTaxi ? 0x111827 : 0xfef9c3));
+                lower.position.y = 1.5;
+                const roundRoof = new THREE.Mesh(
+                    new THREE.SphereGeometry(2.15, 24, 18),
+                    createPaintMat(isTaxi ? 0xfacc15 : 0xfef9c3)
+                );
+                roundRoof.scale.set(0.86, 0.72, 1.15);
+                roundRoof.position.set(0, 2.65, -0.2);
+                vGroup.add(lower, roundRoof);
+                addSmoothWheels(1.95, 2.4, 0.8);
+                addRoundHeadlights(1.4, 3.9, -3.9, 1.6);
+                speed = 0.38;
+            } else if (type === 'AUTO RICKSHAW') {
+                // Curved Canopy Indian 3-Wheeler Auto Rickshaw
+                const base = createSmoothRoundedBlock(2.9, 1.45, 5.0, 0.45, createPaintMat(0x16a34a));
+                base.position.y = 1.25;
+                const curvedCanopy = new THREE.Mesh(
+                    new THREE.CylinderGeometry(1.45, 1.45, 3.8, 20, 1, false, 0, Math.PI),
+                    createPaintMat(0xfacc15)
+                );
+                curvedCanopy.rotation.z = Math.PI / 2;
+                curvedCanopy.rotation.y = Math.PI / 2;
+                curvedCanopy.position.set(0, 2.85, -0.2);
+                vGroup.add(base, curvedCanopy);
+                addSmoothWheels(1.4, 1.55, 0.62);
+                addRoundHeadlights(0.0, 2.52, -2.52, 1.35);
+                speed = 0.33;
+                hitRadius = 4.2;
+            } else if (type === 'BEST RED BUS') {
+                const body = createSmoothRoundedBlock(5.0, 5.2, 15.2, 0.6, createPaintMat(0xdc2626));
+                body.position.y = 3.4;
+                const windows = createSmoothRoundedBlock(5.12, 1.7, 13.4, 0.3, glassMat);
+                windows.position.set(0, 4.3, 0);
+                vGroup.add(body, windows);
+                addSmoothWheels(2.45, 4.9, 1.12);
+                addRoundHeadlights(1.85, 7.62, -7.62, 1.9);
+                speed = 0.34;
+                hitRadius = 8.5;
+            } else if (type === 'FORCE AMBULANCE') {
+                const amb = createSmoothRoundedBlock(4.4, 4.2, 10.2, 0.55, createPaintMat(0xffffff));
+                amb.position.y = 2.8;
+                const siren = createSmoothRoundedBlock(1.5, 0.4, 0.6, 0.15, new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+                siren.position.set(0, 5.05, 3.2);
+                vGroup.add(amb, siren);
+                addSmoothWheels(2.15, 3.3, 0.92);
+                addRoundHeadlights(1.55, 5.12, -5.12, 1.85);
+                speed = 0.45;
+                hitRadius = 6.5;
+            } else if (type === 'TATA HIGHWAY TRUCK') {
+                const cab = createSmoothRoundedBlock(4.8, 4.6, 4.4, 0.5, createPaintMat(0xea580c));
+                cab.position.set(0, 3.1, 4.6);
+                const cargo = createSmoothRoundedBlock(5.0, 5.4, 10.8, 0.45, createPaintMat(0x78350f));
+                cargo.position.set(0, 3.5, -3.0);
+                vGroup.add(cab, cargo);
+                addSmoothWheels(2.35, 4.6, 1.12);
+                addRoundHeadlights(1.75, 6.82, -8.4, 1.9);
+                speed = 0.32;
+                hitRadius = 8.5;
+            } else if (type === 'ROYAL ENFIELD BULLET' || type === 'ACTIVA SCOOTY') {
+                const isBullet = type === 'ROYAL ENFIELD BULLET';
+                const tank = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.65, 20, 16),
+                    createPaintMat(isBullet ? 0x111827 : 0x06b6d4)
+                );
+                tank.scale.set(0.75, 0.85, 2.6);
+                tank.position.y = 1.45;
+                const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.7, 12), rimMat);
+                handle.rotation.z = Math.PI / 2;
+                handle.position.set(0, 2.35, 1.15);
+                npcDriver.position.set(0, 1.05, -0.2);
+                vGroup.add(tank, handle);
+                addSmoothWheels(0.32, 1.35, 0.68);
+                speed = 0.44;
+                hitRadius = 3.8;
+            }
+
+            vGroup.userData = { type, speed, hitRadius, npcDriver };
+            return vGroup;
+        }
+
+        /* =========================================================
+           CURVED WINDING ROADS, FOOTPATHS & MUMBAI MAP
+           ========================================================= */
+        function createRoadRibbonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1e2024';
+            ctx.fillRect(0, 0, 256, 256);
+
+            // Yellow Edge Lines
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(10, 0, 6, 256);
+            ctx.fillRect(240, 0, 6, 256);
+
+            // White Dashed Center Line
+            ctx.fillStyle = '#f8fafc';
+            for (let y = 16; y < 256; y += 64) {
+                ctx.fillRect(124, y, 8, 36);
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 45);
+            return tex;
+        }
+
+        function createFootpathRibbonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, 128, 64);
+            ctx.strokeRect(0, 64, 128, 64);
+
+            // Indian Yellow & Black Curb Stone Strip
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(0, 0, 18, 64);
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 64, 18, 64);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 80);
+            return tex;
+        }
+
+        // Builds a Smooth Curved Road Ribbon + Left & Right Raised Curved Footpaths from a CatmullRomCurve3
+        function buildCurvedRoadAndFootpaths(curve, roadWidth = 18, footpathWidth = 4.6, segments = 220) {
+            const roadTex = createRoadRibbonTexture();
+            const fpTex = createFootpathRibbonTexture();
+            const roadMat = new THREE.MeshToonMaterial({ map: roadTex, side: THREE.DoubleSide });
+            const fpMat = new THREE.MeshToonMaterial({ map: fpTex, side: THREE.DoubleSide });
+
+            function buildOffsetRibbon(offsetDist, width, heightY, mat) {
+                const positions = [];
+                const uvs = [];
+                const indices = [];
+
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const pt = curve.getPointAt(t);
+                    const tan = curve.getTangentAt(t).normalize();
+                    const normal = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+
+                    const center = pt.clone().addScaledVector(normal, offsetDist);
+                    const leftPt = center.clone().addScaledVector(normal, -width / 2);
+                    const rightPt = center.clone().addScaledVector(normal, width / 2);
+
+                    positions.push(leftPt.x, heightY, leftPt.z);
+                    positions.push(rightPt.x, heightY, rightPt.z);
+
+                    uvs.push(0, t * 40);
+                    uvs.push(1, t * 40);
+
+                    if (i < segments) {
+                        const a = i * 2;
+                        const b = i * 2 + 1;
+                        const c = (i + 1) * 2;
+                        const d = (i + 1) * 2 + 1;
+                        indices.push(a, b, c);
+                        indices.push(b, d, c);
+                    }
+                }
+
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+                geo.setIndex(indices);
+                geo.computeVertexNormals();
+
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+            }
+
+            // Main Curved Asphalt Roadway
+            buildOffsetRibbon(0, roadWidth, 0.05, roadMat);
+
+            // Left & Right Raised Curved Footpaths (Where all 85+ NPCs walk!)
+            const fpOffset = roadWidth / 2 + footpathWidth / 2 + 0.2;
+            buildOffsetRibbon(-fpOffset, footpathWidth, 0.22, fpMat);
+            buildOffsetRibbon(fpOffset, footpathWidth, 0.22, fpMat);
+
+            roadCurves.push({
+                curve,
+                roadWidth,
+                fpOffset
+            });
+        }
+
+        function loadScriptOnce(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.async = true;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Could not load script: ' + url));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function ensureGLTFLoader() {
+            if (THREE.GLTFLoader) return;
+            const urls = [
+                'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js',
+                'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'
+            ];
+            let lastError;
+            for (const url of urls) {
+                try {
+                    await loadScriptOnce(url);
+                    if (THREE.GLTFLoader) return;
+                    lastError = new Error('Script loaded but THREE.GLTFLoader was not registered');
+                } catch (e) { lastError = e; }
+            }
+            throw lastError || new Error('GLTFLoader unavailable');
+        }
+
+        async function loadGroveStreetMap() {
+            if (groveMapLoadStarted) return;
+            groveMapLoadStarted = true;
+            setMapLoadStatus('Loading Grove Street map: connecting to server...');
+            try {
+                await ensureGLTFLoader();
+                setMapLoadStatus('Grove Street map: downloading 34 MB model...');
+                const gltfLoader = new THREE.GLTFLoader();
+                const tryMapUrl = (urlIndex) => {
+                    const mapUrl = GROVE_STREET_GLB_URLS[urlIndex];
+                    setMapLoadStatus('Loading Grove Street map from ' + mapUrl + ' ...');
+                    gltfLoader.load(
+                    mapUrl + (mapUrl.includes('?') ? '&' : '?') + 'v=4',
+                    (gltf) => {
+                        try {
+                            const model = gltf.scene;
+                            model.updateMatrixWorld(true);
+                            const bounds = new THREE.Box3().setFromObject(model);
+                            const size = new THREE.Vector3();
+                            const center = new THREE.Vector3();
+                            bounds.getSize(size);
+                            bounds.getCenter(center);
+                            if (!Number.isFinite(size.x) || Math.max(size.x, size.z) <= 0) {
+                                throw new Error('GLB has invalid or empty model bounds');
+                            }
+                            const targetWidth = 240;
+                            const scale = targetWidth / Math.max(size.x, size.z);
+                            model.scale.setScalar(scale);
+                            model.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+                            model.traverse((obj) => {
+                                if (obj.isMesh) {
+                                    obj.castShadow = false;
+                                    obj.receiveShadow = true;
+                                    if (obj.material) {
+                                        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+                                        mats.forEach((mat) => {
+                                            if (mat) { mat.side = THREE.DoubleSide; mat.needsUpdate = true; }
+                                        });
+                                    }
+                                }
+                            });
+                            groveStreetGroup.add(model);
+                            groveStreetGroup.updateMatrixWorld(true);
+                            GameState.mapLoaded = true;
+                            setMapLoadStatus('GROVE STREET MAP READY');
+                            console.log('Grove Street GLB loaded:', size, 'scale:', scale);
+                            setTimeout(() => { const el = document.getElementById('map-load-status'); if (el) el.style.display = 'none'; }, 3500);
+                        } catch (e) {
+                            console.error('Grove Street model setup failed:', e);
+                            groveMapLoadFailed = true;
+                            setMapLoadStatus('MAP DECODE ERROR: ' + (e.message || e), true);
+                        }
+                    },
+                    (xhr) => {
+                        if (xhr.lengthComputable && xhr.total > 0) {
+                            const pct = Math.round(xhr.loaded / xhr.total * 100);
+                            setMapLoadStatus('Downloading Grove Street map... ' + pct + '%');
+                        } else if (xhr.loaded) {
+                            setMapLoadStatus('Downloading Grove Street map... ' + (xhr.loaded / 1048576).toFixed(1) + ' MB');
+                        }
+                    },
+                    (error) => {
+                        console.error('Could not load Grove Street GLB from:', mapUrl, error);
+                        if (urlIndex + 1 < GROVE_STREET_GLB_URLS.length) {
+                            tryMapUrl(urlIndex + 1);
+                        } else {
+                            groveMapLoadFailed = true;
+                            setMapLoadStatus('MAP DOWNLOAD FAILED. Check that san_andreas_full_la_map.glb is in the GitHub Pages site root beside index.html.', true);
+                        }
+                    }
+                    );
+                };
+                tryMapUrl(0);
+                // A stalled request should produce a visible diagnostic instead of an endless spinner.
+                setTimeout(() => {
+                    if (!GameState.mapLoaded && !groveMapLoadFailed) {
+                        groveMapLoadFailed = true;
+                        setMapLoadStatus('MAP LOAD TIMEOUT. Check the published GLB URL and GitHub Pages deployment.', true);
+                    }
+                }, 120000);
+            } catch (error) {
+                console.error('GLTFLoader initialization failed:', error);
+                groveMapLoadFailed = true;
+                setMapLoadStatus('3D LOADER FAILED. CDN blocked or unavailable: ' + (error.message || error), true);
+            }
+        }
+
+        function initCurvedSanAndreasWorld() {
+            const canvas = document.getElementById('game-canvas');
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87a9bd);
+            scene.fog = new THREE.FogExp2(0x87a9bd, 0.00065);
+
+            camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 1800);
+            clock = new THREE.Clock();
+
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0x39434a, 1.15);
+            scene.add(hemiLight);
+
+            sunLight = new THREE.DirectionalLight(0xfff1d0, 1.35);
+            sunLight.position.set(180, 260, 140);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.left = -260;
+            sunLight.shadow.camera.right = 260;
+            sunLight.shadow.camera.top = 260;
+            sunLight.shadow.camera.bottom = -260;
+            scene.add(sunLight);
+
+            // The imported Grove Street map supplies its own terrain and buildings.
+            // This invisible follower remains because the original NPC update loop expects it.
+            groundPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(1, 1),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            groundPlane.rotation.x = -Math.PI / 2;
+            groundPlane.visible = false;
+            scene.add(groundPlane);
+
+            // A simple invisible navigation loop keeps the existing pedestrian and vehicle
+            // AI systems alive while the GLB provides the visible Grove Street environment.
+            const aiLoop = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-76, 0, -58),
+                new THREE.Vector3(-28, 0, -86),
+                new THREE.Vector3(45, 0, -72),
+                new THREE.Vector3(82, 0, -18),
+                new THREE.Vector3(64, 0, 54),
+                new THREE.Vector3(-5, 0, 82),
+                new THREE.Vector3(-70, 0, 42)
+            ], true);
+            roadCurves = [{ curve: aiLoop, roadWidth: 12, fpOffset: 9 }];
+
+            // Load map from the website root. The uploaded GLB's source bounds are about
+            // 3000 x 2460 units, so normalize it to a playable ~240 x 197 unit footprint.
+            groveStreetGroup = new THREE.Group();
+            scene.add(groveStreetGroup);
+
+            const loadingLabel = document.querySelector('#splash-screen p');
+            if (loadingLabel) loadingLabel.textContent = 'LOADING GROVE STREET MAP...';
+
+            loadGroveStreetMap();
+
+            // Keep mission markers and existing character/vehicle systems compatible.
+            missionBeacon = new THREE.Mesh(
+                new THREE.CylinderGeometry(2.5, 2.5, 26, 24, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+            );
+            scene.add(missionBeacon);
+
+            doctorNPC = createRealHumanCharacter({
+                jacket: '#ffffff', shirt: '#0284c7', pants: '#0f172a', skin: '#f1c27d', shades: false, beard: true
+            }, 1.05, false);
+            doctorNPC.position.set(Landmarks.hospital.x - 16, 0, Landmarks.hospital.z);
+            scene.add(doctorNPC);
+
+            buildLobbyPreviews();
+            rebuildPlayerHero();
+            spawnFootpathPedestrians(28);
+            spawnCurvedRoadIndianVehicles();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function buildSmoothCurvedBuilding(x, z, w, h, d, colorHex, signText, addDome = false) {
+            const group = new THREE.Group();
+            const tex = createRealisticBuildingTexture(colorHex, signText);
+            const mat = new THREE.MeshToonMaterial({ map: tex, });
+
+            const body = createSmoothRoundedBlock(w, h, d, 1.4, mat, 12);
+            body.position.y = h / 2;
+            group.add(body);
+
+            if (addDome) {
+                const dome = new THREE.Mesh(
+                    new THREE.SphereGeometry(Math.min(w, d) * 0.42, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+                    new THREE.MeshToonMaterial({ color: 0xf59e0b, })
+                );
+                dome.position.y = h;
+                group.add(dome);
+            }
+
+            group.position.set(x, 0, z);
+            colliders.push({ x, z, r: Math.hypot(w, d) * 0.45 });
+            scene.add(group);
+            return group;
+        }
+
+        function buildSmoothPhoenixMall() {
+            const floor = new THREE.Mesh(
+                new THREE.CylinderGeometry(20, 21, 0.35, 36),
+                new THREE.MeshToonMaterial({ color: 0xf1f5f9, })
+            );
+            floor.position.set(0, 0.18, 0);
+            scene.add(floor);
+
+            const roofTex = createRealisticBuildingTexture('#0284c7', 'PHOENIX PALLADIUM MALL');
+            const roof = createSmoothRoundedBlock(34, 4.0, 34, 2.2, new THREE.MeshToonMaterial({ map: roofTex }));
+            roof.position.set(0, 13.5, 0);
+            scene.add(roof);
+
+            const glassDome = new THREE.Mesh(
+                new THREE.SphereGeometry(12, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2),
+                new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55, clearcoat: 1.0 })
+            );
+            glassDome.position.set(0, 15.2, 0);
+            scene.add(glassDome);
+
+            const colMat = new THREE.MeshToonMaterial({ color: 0xe2e8f0 });
+            [[-13, -13], [13, -13], [-13, 13], [13, 13]].forEach(([px, pz]) => {
+                const col = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 12, 20), colMat);
+                col.position.set(px, 6, pz);
+                scene.add(col);
+            });
+        }
+
+        function buildGTASanAndreasLandmarks() {
+            // Core Story Landmarks
+            buildSmoothCurvedBuilding(Landmarks.shop.x, Landmarks.shop.z, 18, 20, 18, '#78350f', 'AMMU-NATION ARMORY', true);
+            buildSmoothCurvedBuilding(Landmarks.cafe.x, Landmarks.cafe.z, 20, 18, 18, '#7f1d1d', 'SHARMA CAFE & LIVE TV', false);
+            buildSmoothCurvedBuilding(Landmarks.lab.x, Landmarks.lab.z, 26, 28, 24, '#312e81', 'AREA 69 DESI BULL LAB', true);
+            buildSmoothCurvedBuilding(Landmarks.hospital.x, Landmarks.hospital.z, 28, 30, 22, '#065f46', 'ALL SAINTS MUMBAI HOSPITAL', true);
+
+            // 1. JUHU CUL-DE-SAC (Circular Roundabout, CJ's House, Sweet's House, Ryder's House)
+            const groveDisk = new THREE.Mesh(
+                new THREE.CylinderGeometry(24, 24, 0.12, 36),
+                new THREE.MeshToonMaterial({ color: 0x1e2024, })
+            );
+            groveDisk.position.set(Landmarks.groveStreet.x, 0.06, Landmarks.groveStreet.z);
+            const groveIsland = new THREE.Mesh(
+                new THREE.CylinderGeometry(8, 8, 0.35, 32),
+                new THREE.MeshToonMaterial({ color: 0x16a34a })
+            );
+            groveIsland.position.set(Landmarks.groveStreet.x, 0.18, Landmarks.groveStreet.z);
+            scene.add(groveDisk, groveIsland);
+
+            buildSmoothCurvedBuilding(142, 0, 16, 14, 16, '#15803d', 'JUHU BEACH HOUSE', false);
+            buildSmoothCurvedBuilding(128, -26, 15, 12, 15, '#166534', 'SHARMA FAMILY HOUSE', false);
+            buildSmoothCurvedBuilding(128, 26, 15, 12, 15, '#14532d', 'PATEL BUNGALOW • JUHU', false);
+            buildSmoothCurvedBuilding(92, -32, 18, 14, 16, '#b45309', 'JUHU GYM & FITNESS', false);
+
+            // 2. LOS SANTOS SKYLINE TOWER (Cylindrical US Bank / Maze Tower)
+            const lsTower = new THREE.Mesh(
+                new THREE.CylinderGeometry(13, 15, 78, 32),
+                new THREE.MeshToonMaterial({
+                    map: createRealisticBuildingTexture('#334155', 'BANDRA SKY TOWER'),
+                    })
+            );
+            lsTower.position.set(-55, 39, -15);
+            colliders.push({ x: -55, z: -15, r: 13 });
+            lsTower.castShadow = true;
+            const helipadCrown = new THREE.Mesh(
+                new THREE.CylinderGeometry(11, 13, 4, 32),
+                new THREE.MeshToonMaterial({ color: 0xf59e0b })
+            );
+            helipadCrown.position.set(-55, 79, -15);
+            scene.add(lsTower, helipadCrown);
+
+            // 3. GLEN PARK POND & ARCHED BRIDGE
+            const pond = new THREE.Mesh(
+                new THREE.CylinderGeometry(22, 22, 0.16, 32),
+                new THREE.MeshPhysicalMaterial({ color: 0x0284c7, clearcoat: 1.0 })
+            );
+            pond.position.set(Landmarks.glenPark.x, 0.08, Landmarks.glenPark.z);
+            const archBridge = new THREE.Mesh(
+                new THREE.TorusGeometry(14, 2.2, 16, 32, Math.PI),
+                new THREE.MeshToonMaterial({ color: 0x94a3b8 })
+            );
+            archBridge.position.set(Landmarks.glenPark.x, 0, Landmarks.glenPark.z);
+            scene.add(pond, archBridge);
+
+            // 4. SANTA MARIA BEACH OCEAN, WOODEN PIER & SPINNING FERRIS WHEEL
+            const beachSea = new THREE.Mesh(
+                new THREE.CylinderGeometry(85, 85, 0.14, 40),
+                new THREE.MeshPhysicalMaterial({ color: 0x0369a1, clearcoat: 1.0 })
+            );
+            beachSea.position.set(-80, 0.07, 175);
+            scene.add(beachSea);
+
+            ferrisWheelGroup = new THREE.Group();
+            const wheelRing = new THREE.Mesh(
+                new THREE.TorusGeometry(18, 0.7, 16, 36),
+                new THREE.MeshToonMaterial({ color: 0xfacc15, emissive: 0xf59e0b, })
+            );
+            ferrisWheelGroup.add(wheelRing);
+            for (let s = 0; s < 8; s++) {
+                const spoke = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.2, 0.2, 36, 8),
+                    new THREE.MeshToonMaterial({ color: 0xffffff })
+                );
+                spoke.rotation.z = (s * Math.PI) / 8;
+                ferrisWheelGroup.add(spoke);
+            }
+            ferrisWheelGroup.position.set(Landmarks.santaMaria.x, 22, Landmarks.santaMaria.z);
+            scene.add(ferrisWheelGroup);
+
+            // 5. VINEWOOD / BOLLYWOOD HILLS & ICONIC SIGN
+            for (let h = -140; h <= 140; h += 48) {
+                const hill = new THREE.Mesh(
+                    new THREE.SphereGeometry(46, 24, 18, 0, Math.PI * 2, 0, Math.PI / 2),
+                    new THREE.MeshToonMaterial({ color: 0x365314, })
+                );
+                hill.scale.set(1.3, 0.85, 0.9);
+                hill.position.set(h, 0, -210);
+                scene.add(hill);
+            }
+            buildSmoothCurvedBuilding(0, -185, 48, 12, 6, '#f8fafc', 'B O L L Y W O O D • M U M B A I', false);
+
+            // 6. BURGER SHOT, CLUCKIN' BELL & MUMBAI SHOPS
+            buildSmoothCurvedBuilding(-65, -55, 18, 16, 16, '#ea580c', 'BURGER HUT & DESI DHABA', true);
+            buildSmoothCurvedBuilding(68, 45, 18, 16, 16, '#ca8a04', 'CHICKEN CORNER & CHAI POINT', true);
+
+            // Lush Rounded Palm & Banyan Trees
+            for (let t = 0; t < 45; t++) {
+                const angle = (t / 45) * Math.PI * 2;
+                const radius = 52 + (t % 3) * 38;
+                const tx = Math.cos(angle) * radius;
+                const tz = Math.sin(angle) * radius;
+                if (Math.hypot(tx, tz) < 28) continue;
+
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.28, 0.45, 7, 14),
+                    new THREE.MeshToonMaterial({ color: 0x78350f })
+                );
+                trunk.position.set(tx, 3.5, tz);
+                const canopy = new THREE.Mesh(
+                    new THREE.SphereGeometry(3.2, 18, 16),
+                    new THREE.MeshToonMaterial({ color: 0x15803d, })
+                );
+                canopy.scale.set(1.2, 0.75, 1.2);
+                canopy.position.set(tx, 7.2, tz);
+                scene.add(trunk, canopy);
+            }
+        }
+
+        function rebuildPlayerHero() {
+            const oldPos = playerGroup ? playerGroup.position.clone() : new THREE.Vector3(0, 0, 0);
+            if (playerGroup) scene.remove(playerGroup);
+
+            const h = GameState.heroes[GameState.heroIndex];
+            playerGroup = createRealHumanCharacter(h, 1.0, false);
+            playerGroup.position.copy(oldPos);
+            playerRig = playerGroup.userData;
+
+            // Smooth Curved Hockey Stick in Right Hand
+            const stickGroup = new THREE.Group();
+            const shaft = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.055, 0.055, 1.9, 14),
+                new THREE.MeshToonMaterial({ color: 0xd97706 })
+            );
+            const curvedToe = new THREE.Mesh(
+                new THREE.TorusGeometry(0.22, 0.065, 12, 20, Math.PI * 0.75),
+                new THREE.MeshToonMaterial({ color: 0x111827 })
+            );
+            curvedToe.position.set(0, -0.95, 0.22);
+            curvedToe.rotation.y = Math.PI / 2;
+            stickGroup.add(shaft, curvedToe);
+            stickGroup.position.set(0, -1.25, 0.45);
+            stickGroup.rotation.x = Math.PI / 2.4;
+            stickGroup.visible = GameState.hasHockey;
+
+            playerRig.rightArm.add(stickGroup);
+            playerRig.weaponMesh = stickGroup;
+
+            scene.add(playerGroup);
+            updateHeroSpecialButtons();
+        }
+
+        function selectHero(idx, el) {
+            GameState.heroIndex = idx;
+            GameState.souravZoomActive = false;
+            if (camera) {
+                camera.fov = 72;
+                camera.updateProjectionMatrix();
+            }
+            document.querySelectorAll('.char-option').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            if (!GameState.drivingVehicle) spawnCurvedRoadIndianVehicles();
+            rebuildPlayerHero();
+        }
+
+        function updateHeroSpecialButtons() {
+            document.getElementById('btn-speaker').style.display = (GameState.heroIndex === 1) ? 'flex' : 'none';
+            document.getElementById('btn-zoom').style.display = (GameState.heroIndex === 3) ? 'flex' : 'none';
+            applyAtmosphereLighting();
+        }
+
+        function triggerSamaySpeaker() {
+            if (GameState.mode !== 'PLAY' || GameState.heroIndex !== 1) return;
+            GameState.samayAttractTimer = 14;
+            showBanner("🎤 Samay Raina Live Comedy & Song! Crowd is gathering behind you!");
+        }
+
+        function toggleSouravZoom() {
+            if (GameState.mode !== 'PLAY' || GameState.heroIndex !== 3) return;
+            GameState.souravZoomActive = !GameState.souravZoomActive;
+            camera.fov = GameState.souravZoomActive ? 22 : 72;
+            camera.updateProjectionMatrix();
+            showBanner(GameState.souravZoomActive ? "🔭 Sourav Long-Range Zoom: ON" : "🔭 Sourav Long-Range Zoom: OFF");
+        }
+
+        function applyAtmosphereLighting() {
+            if (!scene) return;
+            if (GameState.level <= 3) {
+                scene.background.setHex(0xfdba74);
+                scene.fog.color.setHex(0xfdba74);
+                scene.fog.density = 0.0024;
+                hemiLight.intensity = 0.95;
+            } else if (GameState.heroIndex === 3) {
+                scene.background.setHex(0x1e293b);
+                scene.fog.color.setHex(0x1e293b);
+                scene.fog.density = 0.0012;
+                hemiLight.intensity = 1.35;
+            } else {
+                scene.background.setHex(0x140c12);
+                scene.fog.color.setHex(0x140c12);
+                scene.fog.density = 0.0038;
+                hemiLight.intensity = 0.65;
+            }
+        }
+
+        /* =========================================================
+           85+ PEDESTRIANS WALKING STRICTLY ON CURVED FOOTPATHS
+           & 24 INDIAN VEHICLES FOLLOWING WINDING CURVED ROADS
+           ========================================================= */
+        function spawnFootpathPedestrians(count) {
+            npcs.forEach(n => scene.remove(n.mesh));
+            npcs = [];
+            const jackets = ['#15803d', '#0284c7', '#ea580c', '#9333ea', '#dc2626', '#475569', '#ca8a04'];
+            const skins = ['#f1c27d', '#e0ac69', '#c68642', '#d2996c'];
+
+            for (let i = 0; i < count; i++) {
+                const m = createRealHumanCharacter({
+                    jacket: jackets[i % jackets.length],
+                    shirt: '#ffffff',
+                    pants: i % 2 === 0 ? '#1e293b' : '#334155',
+                    skin: skins[i % skins.length],
+                    shades: i % 4 === 0,
+                    beard: i % 3 === 0
+                }, 0.95 + (i % 3) * 0.04, false);
+
+                const curveObj = roadCurves[i % roadCurves.length];
+                const side = (i % 2 === 0) ? 1 : -1; // Left or Right Footpath
+                const t = (i / count) % 1.0;
+
+                scene.add(m);
+                npcs.push({
+                    mesh: m,
+                    curveObj,
+                    t,
+                    dir: (i % 4 < 2) ? 1 : -1,
+                    side,
+                    speedT: 0.00028 + (i % 5) * 0.00004,
+                    phase: Math.random() * 10
+                });
+            }
+        }
+
+        function spawnCurvedRoadIndianVehicles() {
+            vehicles.forEach(v => scene.remove(v.mesh));
+            vehicles = [];
+            const indianFleet = [
+                'MAHINDRA THAR', 'MAHINDRA SCORPIO-N', 'TATA SAFARI', 'MARUTI SWIFT',
+                'HINDUSTAN AMBASSADOR', 'KAALI-PEELI TAXI', 'AUTO RICKSHAW',
+                'BEST RED BUS', 'FORCE AMBULANCE', 'TATA HIGHWAY TRUCK',
+                'ROYAL ENFIELD BULLET', 'ACTIVA SCOOTY',
+                'MAHINDRA THAR', 'MAHINDRA SCORPIO-N', 'MARUTI SWIFT', 'KAALI-PEELI TAXI',
+                'AUTO RICKSHAW', 'TATA SAFARI', 'HINDUSTAN AMBASSADOR', 'ROYAL ENFIELD BULLET',
+                'ACTIVA SCOOTY', 'MARUTI SWIFT', 'AUTO RICKSHAW', 'KAALI-PEELI TAXI'
+            ];
+
+            const fleet = indianFleet.filter(t => t !== 'MAHINDRA THAR' || GameState.heroIndex === 2);
+            fleet.forEach((type, i) => {
+                const vMesh = createIndianVehicleMesh(type);
+                const curveObj = roadCurves[i % roadCurves.length];
+                const dir = (i % 2 === 0) ? 1 : -1;
+                const laneOffset = dir * (curveObj.roadWidth * 0.24); // Left/Right Indian Driving Lanes
+                let t = (i / fleet.length) % 1.0;
+                if (type === 'MAHINDRA THAR') t = (t + 0.5) % 1.0;
+                if (curveObj.curve.getPointAt(t).length() < 45) t = (t + 0.3) % 1.0;
+
+                scene.add(vMesh);
+                vehicles.push({
+                    mesh: vMesh,
+                    type,
+                    curveObj,
+                    t,
+                    dir,
+                    laneOffset,
+                    speed: vMesh.userData.speed,
+                    speedT: vMesh.userData.speed * 0.0034,
+                    stoppedByPlayer: false
+                });
+            });
+        }
+
+        function toggleVehicleMount() {
+            if (GameState.drivingVehicle) {
+                exitVehicle();
+            } else if (GameState.nearbyVehicle) {
+                enterVehicle(GameState.nearbyVehicle);
+            }
+        }
+
+        function enterVehicle(vObj) {
+            GameState.drivingVehicle = vObj;
+            document.body.classList.add(/BULLET|ACTIVA/.test(vObj.type) ? 'veh-bike' : 'veh-car');
+            carVel = 0; wheelAngle = 0; camMode = 'third';
+            if (vObj.mesh.userData.npcDriver) {
+                vObj.mesh.userData.npcDriver.visible = false;
+            }
+            playerGroup.visible = false;
+            const btn = document.getElementById('btn-vehicle');
+            btn.innerText = `🚪 EXIT ${vObj.type}`;
+            btn.style.display = 'block';
+            showBanner(`🚙 Driving ${vObj.type}! Use Movement Buttons to Drive & Steer.`);
+        }
+
+        function exitVehicle() {
+            const vObj = GameState.drivingVehicle;
+            if (!vObj) return;
+            playerGroup.position.set(vObj.mesh.position.x + 4.5, 0, vObj.mesh.position.z);
+            playerGroup.visible = true;
+            if (vObj.mesh.userData.npcDriver) {
+                vObj.mesh.userData.npcDriver.visible = true;
+            }
+            GameState.drivingVehicle = null;
+            vObj.mesh.visible = true;
+            document.body.classList.remove('veh-car', 'veh-bike');
+            camMode = 'third';
+            document.getElementById('btn-vehicle').style.display = 'none';
+            showBanner("🚶 Exited Vehicle.");
+        }
+
+        /* =========================================================
+           ZOMBIE & PICKUP SPAWNERS
+           ========================================================= */
+        function spawnLevelZombies(count, includeBossScientist = false) {
+            zombies.forEach(z => scene.remove(z.mesh));
+            zombies = [];
+
+            for (let i = 0; i < count; i++) {
+                const isTank = (i % 5 === 0 && GameState.level >= 5);
+                const zMesh = createRealHumanCharacter({
+                    jacket: isTank ? '#365314' : '#14532d',
+                    shirt: '#450a0a',
+                    pants: '#1c1917',
+                    skin: '#65a30d'
+                }, isTank ? 1.38 : 1.0, true);
+
+                zMesh.userData.leftArm.rotation.x = -Math.PI / 2.1;
+                zMesh.userData.rightArm.rotation.x = -Math.PI / 2.1;
+
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 32 + Math.random() * 55;
+                zMesh.position.set(
+                    playerGroup.position.x + Math.cos(ang) * dist,
+                    0,
+                    playerGroup.position.z + Math.sin(ang) * dist
+                );
+                scene.add(zMesh);
+                zombies.push({
+                    mesh: zMesh,
+                    hp: isTank ? 170 : 80,
+                    speed: isTank ? 0.09 : 0.14 + Math.random() * 0.04,
+                    isBoss: false
+                });
+            }
+
+            if (includeBossScientist) {
+                const boss = createRealHumanCharacter({
+                    jacket: '#ffffff', shirt: '#dc2626', pants: '#0f172a', skin: '#84cc16', beard: true
+                }, 1.55, true);
+                boss.userData.leftArm.rotation.x = -Math.PI / 2;
+                boss.userData.rightArm.rotation.x = -Math.PI / 2;
+                boss.position.set(Landmarks.lab.x, 0, Landmarks.lab.z + 16);
+                scene.add(boss);
+                zombies.push({ mesh: boss, hp: 380, speed: 0.15, isBoss: true });
+            }
+        }
+
+        function spawnWorldPickups() {
+            worldPickups.forEach(p => scene.remove(p.mesh));
+            worldPickups = [];
+
+            const hCrate = createSmoothRoundedBlock(1.6, 1.6, 1.6, 0.25, new THREE.MeshToonMaterial({ color: 0xf59e0b }));
+            hCrate.position.set(Landmarks.shop.x, 0.9, Landmarks.shop.z + 14);
+            scene.add(hCrate);
+            worldPickups.push({ mesh: hCrate, type: 'HOCKEY', label: 'Hockey Stick Crate' });
+
+            const sCrate = createSmoothRoundedBlock(1.6, 1.6, 1.6, 0.25, new THREE.MeshToonMaterial({ color: 0x38bdf8 }));
+            sCrate.position.set(24, 0.9, 28);
+            scene.add(sCrate);
+            worldPickups.push({ mesh: sCrate, type: 'SUPPLY', label: 'Safe House Ration Kit' });
+
+            const anti = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.6, 0.6, 2.2, 20),
+                new THREE.MeshBasicMaterial({ color: 0x00ff66 })
+            );
+            anti.position.set(Landmarks.lab.x, 1.2, Landmarks.lab.z + 15);
+            scene.add(anti);
+            worldPickups.push({ mesh: anti, type: 'ANTIDOTE', label: 'Virus Antidote Vial' });
+        }
+
+        /* =========================================================
+           100-LEVEL PROGRESSION ENGINE
+           ========================================================= */
+        function getLevelConfig(lvl) {
+            if (lvl === 1) {
+                return {
+                    title: "LEVEL 1: PEACEFUL MUMBAI",
+                    story: "It is a peaceful day across Juhu and Phoenix Mall. 85+ citizens are walking along the curved footpaths and Indian vehicles are cruising the winding roads. Head to the Ammu-Nation Armory Shop (Green Marker) and unlock your Hockey Stick!",
+                    task: "Task: Exit Phoenix Mall, follow the curved road to the Armory Shop (Green Marker), and press PICK/USE or buy the Hockey Stick.",
+                    zombieCount: 0,
+                    beaconPos: { x: Landmarks.shop.x, z: Landmarks.shop.z + 14 }
+                };
+            } else if (lvl === 2) {
+                return {
+                    title: "LEVEL 2: BREAKING NEWS AT SHARMA CAFE",
+                    story: "Rumors are spreading about a chemical explosion at the Area 69 'Desi Bull' plant. Walk along the footpath or drive any Indian vehicle to Sharma Cafe (Green Marker) and check the Live Breaking News on the TV!",
+                    task: "Task: Go to Sharma Cafe (Green Marker) and press PICK/USE to watch the TV News.",
+                    zombieCount: 0,
+                    beaconPos: { x: Landmarks.cafe.x, z: Landmarks.cafe.z + 14 }
+                };
+            } else if (lvl === 3) {
+                return {
+                    title: "LEVEL 3: EMERGENCY RATION PREPARATION",
+                    story: "A city-wide red alert has been declared! Before the zombie outbreak hits at Level 4, reach the Green Marker and collect the Emergency Safe House Ration Kit!",
+                    task: "Task: Reach the Green Marker and press PICK/USE to collect the Ration Kit.",
+                    zombieCount: 0,
+                    beaconPos: { x: 24, z: 28 }
+                };
+            } else if (lvl === 100) {
+                return {
+                    title: "LEVEL 100: THE ZOMBIE SCIENTIST & ANTIDOTE",
+                    story: "FINAL MISSION! The cure is inside the Area 69 'Desi Bull Bio-Lab', but the Chief Scientist has mutated into a dangerous Zombie Boss! Dodge or defeat the Zombie Scientist, grab the Antidote Vial, and deliver it to the Doctor at All Saints Mumbai Hospital!",
+                    task: "Task: 1) Pick up the Antidote at the Bio-Lab (Green Marker) -> 2) Deliver it to the Doctor at the Hospital!",
+                    zombieCount: 16,
+                    beaconPos: { x: Landmarks.lab.x, z: Landmarks.lab.z + 15 }
+                };
+            } else {
+                const kills = Math.min(3 + Math.floor(lvl / 4), 18);
+                return {
+                    title: `LEVEL ${lvl}: MUMBAI APOCALYPSE WAVE`,
+                    story: `The Kalyug Virus has spread from Juhu to Bollywood Hills! Use your melee weapons, special abilities, or Indian vehicles to eliminate ${kills} Zombies in Level ${lvl}!`,
+                    task: `Task: Eliminate ${kills} Zombies in the city (0/${kills}).`,
+                    zombieCount: kills + 5,
+                    requiredKills: kills,
+                    beaconPos: { x: 0, z: -30 }
+                };
+            }
+        }
+
+        function launchLevelStory() {
+            if (!GameState.mapLoaded && !groveMapLoadFailed) {
+                showBanner('⏳ Grove Street map is still loading. Please wait a moment.');
+                return;
+            }
+            if (!GameState.mapLoaded && groveMapLoadFailed) {
+                showBanner('⚠️ Grove Street map could not load. Starting the game with the built-in city map.');
+            }
+            const cfg = getLevelConfig(GameState.level);
+            GameState.mode = 'STORY';
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('story-screen').style.display = 'flex';
+            document.getElementById('story-title').innerText = cfg.title;
+            document.getElementById('story-text').innerText = cfg.story;
+
+            GameState.storyTimer = 15;
+            document.getElementById('story-timer').innerText = GameState.storyTimer;
+
+            if (GameState.storyInterval) clearInterval(GameState.storyInterval);
+            GameState.storyInterval = setInterval(() => {
+                GameState.storyTimer--;
+                document.getElementById('story-timer').innerText = GameState.storyTimer;
+                if (GameState.storyTimer <= 0) startGameplayNow();
+            }, 1000);
+        }
+
+        function startGameplayNow() {
+            if (GameState.storyInterval) clearInterval(GameState.storyInterval);
+            document.getElementById('story-screen').style.display = 'none';
+            document.getElementById('hud-screen').style.display = 'block';
+            GameState.mode = 'PLAY';
+            if (lobbyGroup) lobbyGroup.visible = false;
+            playerGroup.visible = true;
+            GameState.hp = 100;
+            GameState.killsThisLevel = 0;
+            GameState.hasAntidote = false;
+
+            const cfg = getLevelConfig(GameState.level);
+            GameState.requiredKills = cfg.requiredKills || 0;
+
+            document.getElementById('hud-lvl-title').innerText = cfg.title;
+            document.getElementById('hud-task-desc').innerText = cfg.task;
+
+            if (GameState.level === 1 && !GameState.drivingVehicle) {
+                playerGroup.position.set(0, 0, 0);
+            }
+
+            updateHeroSpecialButtons();
+            missionBeacon.position.set(cfg.beaconPos.x, 13, cfg.beaconPos.z);
+            spawnWorldPickups();
+            spawnLevelZombies(cfg.zombieCount, GameState.level === 100);
+            updateUIStats();
+        }
+
+        /* =========================================================
+           GAMEPLAY ACTIONS (BUY, ATTACK, PICK, DROP, JUMP)
+           ========================================================= */
+        function buyWeapon(wName, cost) {
+            if (GameState.cash < cost) {
+                showBanner("❌ Not enough cash! Complete tasks or defeat zombies.");
+                return;
+            }
+            GameState.cash -= cost;
+            GameState.weapon = wName;
+            GameState.hasHockey = true;
+            if (playerRig && playerRig.weaponMesh) playerRig.weaponMesh.visible = true;
+            updateUIStats();
+            showBanner(`✅ ${wName} Purchased & Equipped!`);
+
+            if (GameState.level === 1 && GameState.mode === 'PLAY') {
+                completeCurrentLevel();
+            }
+        }
+
+        function doAttackAction() {
+            if (GameState.mode !== 'PLAY' || GameState.drivingVehicle) return;
+
+            playerRig.rightArm.rotation.x = -Math.PI * 0.95;
+            setTimeout(() => { playerRig.rightArm.rotation.x = 0; }, 220);
+
+            const reach = GameState.hasHockey ? 6.2 : 4.5;
+            const hero = GameState.heroes[GameState.heroIndex];
+            const dmg = hero.dmg + (GameState.hasHockey ? 45 : 0);
+
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const z = zombies[i];
+                if (playerGroup.position.distanceTo(z.mesh.position) <= reach) {
+                    z.hp -= dmg;
+                    const push = z.mesh.position.clone().sub(playerGroup.position).normalize();
+                    z.mesh.position.addScaledVector(push, GameState.heroIndex === 0 ? 4.2 : 2.0);
+
+                    if (z.hp <= 0) {
+                        handleZombieDefeat(i);
+                    }
+                }
+            }
+        }
+
+        function handleZombieDefeat(idx) {
+            scene.remove(zombies[idx].mesh);
+            zombies.splice(idx, 1);
+            GameState.cash += 100;
+            GameState.killsThisLevel++;
+            updateUIStats();
+
+            if (GameState.level >= 4 && GameState.level < 100) {
+                document.getElementById('hud-task-desc').innerText =
+                    `Task: Eliminate ${GameState.requiredKills} Zombies in the city (${GameState.killsThisLevel}/${GameState.requiredKills}).`;
+                if (GameState.killsThisLevel >= GameState.requiredKills) {
+                    completeCurrentLevel();
+                }
+            }
+        }
+
+        function doPickAction() {
+            if (GameState.mode !== 'PLAY') return;
+            const activePos = GameState.drivingVehicle ? GameState.drivingVehicle.mesh.position : playerGroup.position;
+
+            if (GameState.level === 1) {
+                const dShop = Math.hypot(activePos.x - Landmarks.shop.x, activePos.z - (Landmarks.shop.z + 14));
+                if (dShop < 12) {
+                    if (!GameState.hasHockey && GameState.cash >= 300) {
+                        buyWeapon('Hockey Stick', 300);
+                    } else {
+                        GameState.hasHockey = true;
+                        GameState.weapon = 'Hockey Stick';
+                        if (playerRig.weaponMesh) playerRig.weaponMesh.visible = true;
+                        completeCurrentLevel();
+                    }
+                    return;
+                }
+            }
+
+            if (GameState.level === 2) {
+                const dCafe = Math.hypot(activePos.x - Landmarks.cafe.x, activePos.z - (Landmarks.cafe.z + 14));
+                if (dCafe < 12) {
+                    showBanner("📺 LIVE TV NEWS: Virus Outbreak Confirmed! Prepare for survival!");
+                    setTimeout(() => completeCurrentLevel(), 1200);
+                    return;
+                }
+            }
+
+            for (let i = worldPickups.length - 1; i >= 0; i--) {
+                const p = worldPickups[i];
+                if (activePos.distanceTo(p.mesh.position) < 7.5) {
+                    GameState.bagItem = p.label;
+                    scene.remove(p.mesh);
+                    worldPickups.splice(i, 1);
+                    updateUIStats();
+
+                    if (p.type === 'SUPPLY' && GameState.level === 3) {
+                        completeCurrentLevel();
+                    } else if (p.type === 'ANTIDOTE' && GameState.level === 100) {
+                        GameState.hasAntidote = true;
+                        missionBeacon.position.set(doctorNPC.position.x, 13, doctorNPC.position.z);
+                        document.getElementById('hud-task-desc').innerText =
+                            "Task: Antidote Collected! Now go to the Doctor at the Hospital (Green Marker) and press PICK/USE!";
+                        showBanner("🧪 ANTIDOTE COLLECTED! Deliver it to the Hospital Doctor!");
+                    } else {
+                        showBanner(`✋ Picked Up: ${p.label}`);
+                    }
+                    return;
+                }
+            }
+
+            if (GameState.level === 100 && GameState.hasAntidote) {
+                if (activePos.distanceTo(doctorNPC.position) < 11) {
+                    showBanner("🏆 VICTORY! The Doctor synthesized the cure and saved the city! ALL 100 LEVELS COMPLETED!");
+                    GameState.cash += 10000;
+                    updateUIStats();
+                    setTimeout(() => openLobbyScreen(), 4200);
+                    return;
+                }
+            }
+
+            showBanner("ℹ️ Move closer to the Green Marker or item crate and press PICK/USE!");
+        }
+
+        function doDropAction() {
+            if (!GameState.bagItem) {
+                showBanner("Your bag is empty!");
+                return;
+            }
+            const activePos = GameState.drivingVehicle ? GameState.drivingVehicle.mesh.position : playerGroup.position;
+            const box = createSmoothRoundedBlock(1.3, 1.3, 1.3, 0.2, new THREE.MeshToonMaterial({ color: 0xfacc15 }));
+            box.position.set(activePos.x, 0.8, activePos.z + 2.5);
+            scene.add(box);
+            worldPickups.push({ mesh: box, type: 'ITEM', label: GameState.bagItem });
+            showBanner(`📦 Dropped: ${GameState.bagItem}`);
+            GameState.bagItem = null;
+            updateUIStats();
+        }
+
+        function doJumpAction() {
+            if (GameState.drivingVehicle) return;
+            if (isGrounded) {
+                playerVelY = Controls.run ? 0.46 : 0.36;
+                isGrounded = false;
+            }
+        }
+
+        function completeCurrentLevel() {
+            GameState.cash += 250;
+            if (GameState.level < 100) {
+                GameState.level++;
+                showBanner(`🎉 LEVEL CLEARED! Starting Level ${GameState.level}...`);
+                updateUIStats();
+                setTimeout(() => launchLevelStory(), 1600);
+            }
+        }
+
+        function jumpToLevel(lvl) {
+            GameState.level = lvl;
+            toggleModal('settings-modal', false);
+            updateUIStats();
+            if (GameState.mode === 'PLAY') launchLevelStory();
+        }
+
+        /* =========================================================
+           MAIN LOOP: CURVED FOOTPATH NPCS, CURVED ROAD TRAFFIC & RADAR
+           ========================================================= */
+        /* =========================================================
+           COLLISIONS, DRIVING HUD, CAMERA MODE, STEERING WHEEL
+           ========================================================= */
+        const colliders = [];
+
+        function pushOutOfObjects(pos, r) {
+            const solids = colliders.slice();
+            npcs.forEach(n => solids.push({ x: n.mesh.position.x, z: n.mesh.position.z, r: 0.7 }));
+            vehicles.forEach(v => solids.push({ x: v.mesh.position.x, z: v.mesh.position.z, r: (v.mesh.userData.hitRadius || 3) * 0.6 }));
+            for (const c of solids) {
+                const dx = pos.x - c.x, dz = pos.z - c.z, d = Math.hypot(dx, dz), m = c.r + r;
+                if (d < m && d > 0.0001) { pos.x = c.x + dx / d * m; pos.z = c.z + dz / d * m; }
+            }
+        }
+
+        function updateDriveHUD(kmh, vel, steer) {
+            document.getElementById('speed-val').innerText = kmh;
+            document.getElementById('gear-val').innerText = vel < -0.01 ? 'R' : (vel > 0.01 ? 'D' : 'N');
+            document.getElementById('steering-wheel').style.transform = `rotate(${steer * 540}deg)`;
+        }
+
+        function toggleCamMode() {
+            const v = GameState.drivingVehicle;
+            if (!v || /BULLET|ACTIVA/.test(v.type)) return;
+            camMode = camMode === 'third' ? 'cabin' : 'third';
+            document.getElementById('btn-cam').innerText = camMode === 'cabin' ? '📷 Outside' : '📷 Cabin';
+            showBanner(camMode === 'cabin' ? '📷 Cabin view on' : '📷 Outside view on');
+        }
+
+        (function bindSteeringWheel() {
+            const el = document.getElementById('steering-wheel');
+            let cx = 0, cy = 0, lastA = 0;
+            el.addEventListener('pointerdown', e => {
+                wheelDragging = true;
+                const r = el.getBoundingClientRect();
+                cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+                lastA = Math.atan2(e.clientY - cy, e.clientX - cx);
+                el.setPointerCapture(e.pointerId);
+            });
+            el.addEventListener('pointermove', e => {
+                if (!wheelDragging) return;
+                const a = Math.atan2(e.clientY - cy, e.clientX - cx);
+                let d = a - lastA;
+                if (d > Math.PI) d -= 2 * Math.PI;
+                if (d < -Math.PI) d += 2 * Math.PI;
+                wheelAngle = Math.max(-540, Math.min(540, wheelAngle + d * 180 / Math.PI));
+                lastA = a;
+            });
+            const end = () => { wheelDragging = false; };
+            el.addEventListener('pointerup', end);
+            el.addEventListener('pointercancel', end);
+        })();
+
+
+let lobbyGroup = null;
+function buildLobbyPreviews() {
+    lobbyGroup = new THREE.Group();
+    GameState.heroes.forEach((h, i) => {
+        const g = createRealHumanCharacter(h, 1.0, false);
+        const stick = new THREE.Group();
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.9, 14), new THREE.MeshToonMaterial({ color: 0xd97706 }));
+        stick.add(shaft);
+        stick.position.set(0, -1.25, 0.45);
+        stick.rotation.x = Math.PI / 2.4;
+        g.userData.rightArm.add(stick);
+        g.position.set((i - 2) * 4.2, 0, 0);
+        lobbyGroup.add(g);
+    });
+    lobbyGroup.visible = false;
+    scene.add(lobbyGroup);
+}
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            if (ferrisWheelGroup) {
+                ferrisWheelGroup.rotation.z = time * 0.25;
+            }
+
+            if (GameState.mode === 'LOBBY') {
+                lobbyGroup.children.forEach((g, i) => { g.rotation.y = time * 0.35 + i * 0.6; });
+                camera.position.set(0, 7.5, 24);
+                camera.lookAt(0, 2.5, -6);
+            } else if (GameState.mode === 'PLAY') {
+                updatePlayerOrVehicleMovement(time);
+                updateFootpathNPCsAndCurvedTraffic(dt, time);
+                drawCurvedGTARadar();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updatePlayerOrVehicleMovement(time) {
+            const hero = GameState.heroes[GameState.heroIndex];
+
+            if (GameState.drivingVehicle) {
+                const v = GameState.drivingVehicle;
+                const isBike = /BULLET|ACTIVA/.test(v.type);
+                const throttle = Controls.up || Controls.run;
+                const brake = Controls.down;
+                const maxF = v.speed * (isBike ? 2.6 : 2.2) * (Controls.run && !isBike ? 1.25 : 1);
+
+                // Accelerator: hold to speed up, release to coast down slowly
+                if (throttle) carVel = Math.min(maxF, carVel + (isBike ? 0.014 : 0.009));
+                else if (brake) {
+                    // Brake first, then reverse
+                    if (carVel > 0.01) carVel = Math.max(0, carVel - 0.024);
+                    else carVel = Math.max(-maxF * 0.4, carVel - 0.006);
+                } else {
+                    carVel *= 0.985;
+                    if (Math.abs(carVel) < 0.002) carVel = 0;
+                }
+
+                // Steering: wheel drag for car, LEFT/RIGHT for bike
+                const keySteer = (Controls.left ? -1 : 0) + (Controls.right ? 1 : 0);
+                const steer = isBike ? keySteer : Math.max(-1, Math.min(1, wheelAngle / 540 + keySteer));
+                if (!wheelDragging) wheelAngle *= 0.9;
+                const turnRate = (isBike ? 0.055 : 0.036) * Math.min(1, Math.abs(carVel) / (v.speed * 0.6));
+                v.mesh.rotation.y -= steer * turnRate * (carVel < 0 ? -1 : 1);
+
+                const vFwd = new THREE.Vector3(Math.sin(v.mesh.rotation.y), 0, Math.cos(v.mesh.rotation.y));
+                const prev = v.mesh.position.clone();
+                v.mesh.position.addScaledVector(vFwd, carVel);
+
+                // Collisions: buildings, other vehicles, pedestrians
+                let blocked = colliders.some(c => Math.hypot(v.mesh.position.x - c.x, v.mesh.position.z - c.z) < c.r + 2.2);
+                if (!blocked) blocked = vehicles.some(o => o !== v && v.mesh.position.distanceTo(o.mesh.position) < ((o.mesh.userData.hitRadius || 3.5) + 2.2) * 0.85);
+                if (!blocked) blocked = npcs.some(n => Math.hypot(v.mesh.position.x - n.mesh.position.x, v.mesh.position.z - n.mesh.position.z) < 2.0);
+                if (blocked) { v.mesh.position.copy(prev); carVel = 0; }
+
+                playerGroup.position.copy(v.mesh.position);
+
+                for (let i = zombies.length - 1; i >= 0; i--) {
+                    if (v.mesh.position.distanceTo(zombies[i].mesh.position) < v.mesh.userData.hitRadius) {
+                        handleZombieDefeat(i);
+                    }
+                }
+
+                updateDriveHUD(Math.round(Math.abs(carVel) * 216), carVel, steer);
+
+                // Cabin camera: driver seat (right side), looking forward
+                if (!isBike && camMode === 'cabin') {
+                    v.mesh.visible = false;
+                    const right = new THREE.Vector3(Math.cos(v.mesh.rotation.y), 0, -Math.sin(v.mesh.rotation.y));
+                    const eye = v.mesh.position.clone().addScaledVector(right, 0.42).addScaledVector(vFwd, 0.5);
+                    eye.y = v.mesh.position.y + 2.7;
+                    const lookA = v.mesh.rotation.y + playerYaw;
+                    camera.position.copy(eye);
+                    camera.lookAt(eye.x + Math.sin(lookA) * 20, eye.y - 0.3, eye.z + Math.cos(lookA) * 20);
+                    return;
+                }
+
+                // Third-person chase camera
+                v.mesh.visible = true;
+                const camDist = 16.5;
+                const camHeight = 7.2 + playerPitch * 6;
+                const camAngle = v.mesh.rotation.y + Math.PI + playerYaw;
+                const tx = v.mesh.position.x + Math.sin(camAngle) * camDist;
+                const tz = v.mesh.position.z + Math.cos(camAngle) * camDist;
+
+                camera.position.lerp(new THREE.Vector3(tx, camHeight, tz), 0.18);
+                camera.lookAt(v.mesh.position.x, v.mesh.position.y + 2.5, v.mesh.position.z);
+                return;
+            }
+
+            let moving = false;
+            const isRunning = Controls.run;
+            const currentSpeed = hero.speed * 1.7 * (isRunning ? hero.runMultiplier : 1.0);
+
+            const fwd = new THREE.Vector3(-Math.sin(playerYaw), 0, -Math.cos(playerYaw));
+            const rgt = new THREE.Vector3(Math.cos(playerYaw), 0, -Math.sin(playerYaw));
+
+            if (Controls.up || isRunning) {
+                playerGroup.position.addScaledVector(fwd, currentSpeed);
+                moving = true;
+            }
+            if (Controls.down) {
+                playerGroup.position.addScaledVector(fwd, -currentSpeed * 0.7);
+                moving = true;
+            }
+            if (Controls.left) {
+                playerGroup.position.addScaledVector(rgt, -currentSpeed * 0.75);
+                moving = true;
+            }
+            if (Controls.right) {
+                playerGroup.position.addScaledVector(rgt, currentSpeed * 0.75);
+                moving = true;
+            }
+
+            pushOutOfObjects(playerGroup.position, 0.9);
+            playerGroup.position.y += playerVelY;
+            if (playerGroup.position.y > 0) {
+                playerVelY -= 0.019;
+            } else {
+                playerGroup.position.y = 0;
+                playerVelY = 0;
+                isGrounded = true;
+            }
+
+            playerGroup.rotation.y = playerYaw + Math.PI;
+
+            const animFreq = isRunning ? 16 : 10;
+            const animAmp = isRunning ? 0.9 : 0.6;
+            if (moving) {
+                playerRig.leftLeg.rotation.x = Math.sin(time * animFreq) * animAmp;
+                playerRig.rightLeg.rotation.x = -Math.sin(time * animFreq) * animAmp;
+                playerRig.leftArm.rotation.x = -Math.sin(time * animFreq) * (animAmp * 0.8);
+            } else {
+                playerRig.leftLeg.rotation.x = 0;
+                playerRig.rightLeg.rotation.x = 0;
+                playerRig.leftArm.rotation.x = 0;
+            }
+
+            const camDist = 9.2;
+            const camHeight = Math.max(1.8, Math.min(8.5, 4.4 + playerPitch * 5));
+            const tx = playerGroup.position.x + Math.sin(playerYaw) * camDist;
+            const tz = playerGroup.position.z + Math.cos(playerYaw) * camDist;
+
+            camera.position.lerp(new THREE.Vector3(tx, playerGroup.position.y + camHeight, tz), 0.22);
+            camera.lookAt(
+                playerGroup.position.x - Math.sin(playerYaw) * 6,
+                playerGroup.position.y + 2.5,
+                playerGroup.position.z - Math.cos(playerYaw) * 6
+            );
+        }
+
+        function updateFootpathNPCsAndCurvedTraffic(dt, time) {
+            const pPos = playerGroup.position;
+            groundPlane.position.x = pPos.x;
+            groundPlane.position.z = pPos.z;
+
+            if (GameState.samayAttractTimer > 0) {
+                GameState.samayAttractTimer -= dt;
+            }
+
+            // 85+ Pedestrians Walking Strictly on the Raised Curved Footpaths!
+            npcs.forEach(n => {
+                if (GameState.samayAttractTimer > 0 && n.mesh.position.distanceTo(pPos) < 75) {
+                    const dx = pPos.x - n.mesh.position.x;
+                    const dz = pPos.z - n.mesh.position.z;
+                    const dist = Math.hypot(dx, dz);
+                    n.mesh.rotation.y = Math.atan2(dx, dz);
+                    if (dist > 4.2) {
+                        n.mesh.position.x += (dx / dist) * 0.2;
+                        n.mesh.position.z += (dz / dist) * 0.2;
+                    }
+                } else {
+                    n.t += n.speedT * n.dir;
+                    if (n.t > 1.0) {
+                        if (n.curveObj.curve.closed) n.t -= 1.0;
+                        else { n.t = 1.0; n.dir = -1; }
+                    } else if (n.t < 0.0) {
+                        if (n.curveObj.curve.closed) n.t += 1.0;
+                        else { n.t = 0.0; n.dir = 1; }
+                    }
+
+                    const pt = n.curveObj.curve.getPointAt(n.t);
+                    const tan = n.curveObj.curve.getTangentAt(n.t).normalize();
+                    const normal = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+
+                    // Position strictly on the Left or Right Raised Footpath
+                    const fpPos = pt.clone().addScaledVector(normal, n.side * n.curveObj.fpOffset);
+                    n.mesh.position.set(fpPos.x, 0.22, fpPos.z);
+
+                    const moveTan = tan.clone().multiplyScalar(n.dir);
+                    n.mesh.rotation.y = Math.atan2(moveTan.x, moveTan.z);
+                }
+
+                const rig = n.mesh.userData;
+                rig.leftLeg.rotation.x = Math.sin(time * 8 + n.phase) * 0.52;
+                rig.rightLeg.rotation.x = -Math.sin(time * 8 + n.phase) * 0.52;
+                rig.leftArm.rotation.x = -Math.sin(time * 8 + n.phase) * 0.36;
+                rig.rightArm.rotation.x = Math.sin(time * 8 + n.phase) * 0.36;
+            });
+
+            // 24 Indian Vehicles Following the Winding Curved Road Splines
+            let closestStopVehicle = null;
+            let minDist = 11.5;
+
+            vehicles.forEach(v => {
+                if (v === GameState.drivingVehicle) return;
+
+                const dToPlayer = v.mesh.position.distanceTo(pPos);
+                if (GameState.drivingVehicle) {
+                    v.stoppedByPlayer = v.mesh.position.distanceTo(GameState.drivingVehicle.mesh.position) < 9;
+                } else if (dToPlayer < minDist) {
+                    v.stoppedByPlayer = true;
+                    closestStopVehicle = v;
+                    minDist = dToPlayer;
+                } else {
+                    v.stoppedByPlayer = false;
+                }
+
+                if (!v.stoppedByPlayer) {
+                    v.t += v.speedT * v.dir;
+                    if (v.t > 1.0) {
+                        if (v.curveObj.curve.closed) v.t -= 1.0;
+                        else { v.t = 1.0; v.dir = -1; v.laneOffset = -v.laneOffset; }
+                    } else if (v.t < 0.0) {
+                        if (v.curveObj.curve.closed) v.t += 1.0;
+                        else { v.t = 0.0; v.dir = 1; v.laneOffset = -v.laneOffset; }
+                    }
+
+                    const pt = v.curveObj.curve.getPointAt(v.t);
+                    const tan = v.curveObj.curve.getTangentAt(v.t).normalize();
+                    const normal = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+
+                    const lanePos = pt.clone().addScaledVector(normal, v.laneOffset);
+                    v.mesh.position.set(lanePos.x, 0, lanePos.z);
+
+                    const driveTan = tan.clone().multiplyScalar(v.dir);
+                    v.mesh.rotation.y = Math.atan2(driveTan.x, driveTan.z);
+                }
+            });
+
+            if (!GameState.drivingVehicle) {
+                GameState.nearbyVehicle = closestStopVehicle;
+                const vBtn = document.getElementById('btn-vehicle');
+                if (closestStopVehicle) {
+                    vBtn.innerText = `🚙 ENTER ${closestStopVehicle.type}`;
+                    vBtn.style.display = 'block';
+                } else {
+                    vBtn.style.display = 'none';
+                }
+            }
+
+            // Zombies AI
+            zombies.forEach(z => {
+                const dx = pPos.x - z.mesh.position.x;
+                const dz = pPos.z - z.mesh.position.z;
+                const dist = Math.hypot(dx, dz);
+                z.mesh.rotation.y = Math.atan2(dx, dz);
+
+                if (dist > 2.0) {
+                    z.mesh.position.x += (dx / dist) * z.speed;
+                    z.mesh.position.z += (dz / dist) * z.speed;
+                    z.mesh.userData.leftLeg.rotation.x = Math.sin(time * 10) * 0.6;
+                    z.mesh.userData.rightLeg.rotation.x = -Math.sin(time * 10) * 0.6;
+                } else if (!GameState.drivingVehicle) {
+                    GameState.hp -= z.isBoss ? 0.45 : 0.18;
+                    if (GameState.hp <= 0) {
+                        GameState.hp = 100;
+                        playerGroup.position.set(0, 0, 0);
+                        showBanner("⚠️ WASTED! Respawned at Phoenix Mall Safe Zone.");
+                    }
+                    document.getElementById('hp-bar-inner').style.width = `${Math.max(0, GameState.hp)}%`;
+                }
+            });
+        }
+
+        function drawCurvedGTARadar() {
+            const c = document.getElementById('radar-canvas');
+            const ctx = c.getContext('2d');
+            ctx.clearRect(0, 0, c.width, c.height);
+
+            const cx = c.width / 2;
+            const cy = c.height / 2;
+            const scale = 0.42;
+            const pPos = playerGroup.position;
+
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, c.width, c.height);
+
+            // Draw Winding Curved Roads on Radar
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 6;
+            roadCurves.forEach(rc => {
+                ctx.beginPath();
+                const pts = rc.curve.getPoints(50);
+                pts.forEach((pt, idx) => {
+                    const rx = cx + (pt.x - pPos.x) * scale;
+                    const rz = cy + (pt.z - pPos.z) * scale;
+                    if (idx === 0) ctx.moveTo(rx, rz);
+                    else ctx.lineTo(rx, rz);
+                });
+                if (rc.curve.closed) ctx.closePath();
+                ctx.stroke();
+            });
+
+            // Indian Vehicles (Orange Dots)
+            ctx.fillStyle = '#f97316';
+            vehicles.forEach(v => {
+                const vx = cx + (v.mesh.position.x - pPos.x) * scale;
+                const vz = cy + (v.mesh.position.z - pPos.z) * scale;
+                if (vx > 0 && vx < c.width && vz > 0 && vz < c.height) {
+                    ctx.fillRect(vx - 2, vz - 2, 4, 4);
+                }
+            });
+
+            // Zombies (Red Dots)
+            ctx.fillStyle = '#ef4444';
+            zombies.forEach(z => {
+                const zx = cx + (z.mesh.position.x - pPos.x) * scale;
+                const zz = cy + (z.mesh.position.z - pPos.z) * scale;
+                if (zx > 0 && zx < c.width && zz > 0 && zz < c.height) {
+                    ctx.fillRect(zx - 2, zz - 2, 4, 4);
+                }
+            });
+
+            // Green Mission Target
+            const bx = cx + (missionBeacon.position.x - pPos.x) * scale;
+            const bz = cy + (missionBeacon.position.z - pPos.z) * scale;
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(Math.max(8, Math.min(134, bx)), Math.max(8, Math.min(134, bz)), 5.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Player Center Marker
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        /* =========================================================
+           TOUCH SWIPE CAMERA & BUTTON CONTROLS
+           ========================================================= */
+        function bindTouchAndKeyboardControls() {
+            const bindHold = (id, key) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const start = (e) => { e.preventDefault(); Controls[key] = true; el.classList.add('pressed'); };
+                const end = (e) => { e.preventDefault(); Controls[key] = false; el.classList.remove('pressed'); };
+                el.addEventListener('touchstart', start, { passive: false });
+                el.addEventListener('touchend', end, { passive: false });
+                el.addEventListener('mousedown', start);
+                el.addEventListener('mouseup', end);
+                el.addEventListener('mouseleave', end);
+            };
+
+            bindHold('btn-run', 'run');
+            bindHold('btn-up', 'up');
+            bindHold('btn-down', 'down');
+            bindHold('btn-left', 'left');
+            bindHold('btn-right', 'right');
+            bindHold('btn-gas', 'up');
+            bindHold('btn-brake', 'down');
+            bindHold('btn-bgas', 'up');
+            bindHold('btn-bbrake', 'down');
+
+            const lookZone = document.getElementById('touch-look-zone');
+            let lookTouchId = null;
+            let lastTouchX = 0, lastTouchY = 0;
+
+            lookZone.addEventListener('touchstart', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (lookTouchId === null) {
+                        lookTouchId = t.identifier;
+                        lastTouchX = t.clientX;
+                        lastTouchY = t.clientY;
+                        break;
+                    }
+                }
+            }, { passive: true });
+
+            lookZone.addEventListener('touchmove', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (t.identifier === lookTouchId) {
+                        const dx = t.clientX - lastTouchX;
+                        const dy = t.clientY - lastTouchY;
+                        playerYaw -= dx * 0.0075;
+                        playerPitch = Math.max(-0.35, Math.min(0.85, playerPitch + dy * 0.005));
+                        lastTouchX = t.clientX;
+                        lastTouchY = t.clientY;
+                        break;
+                    }
+                }
+            }, { passive: true });
+
+            const endTouchLook = (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) {
+                        lookTouchId = null;
+                        break;
+                    }
+                }
+            };
+            lookZone.addEventListener('touchend', endTouchLook);
+            lookZone.addEventListener('touchcancel', endTouchLook);
+
+            let isMouseDragging = false;
+            lookZone.addEventListener('mousedown', (e) => {
+                isMouseDragging = true;
+                lastTouchX = e.clientX;
+                lastTouchY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isMouseDragging) return;
+                playerYaw -= (e.clientX - lastTouchX) * 0.007;
+                playerPitch = Math.max(-0.35, Math.min(0.85, playerPitch + (e.clientY - lastTouchY) * 0.005));
+                lastTouchX = e.clientX;
+                lastTouchY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isMouseDragging = false; });
+
+            window.addEventListener('keydown', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || e.key === 'ArrowUp') Controls.up = true;
+                if (k === 's' || e.key === 'ArrowDown') Controls.down = true;
+                if (k === 'a' || e.key === 'ArrowLeft') Controls.left = true;
+                if (k === 'd' || e.key === 'ArrowRight') Controls.right = true;
+                if (e.key === 'Shift') Controls.run = true;
+                if (e.key === ' ') doJumpAction();
+                if (k === 'f') toggleVehicleMount();
+                if (k === 'e') doPickAction();
+                if (k === 'g') doDropAction();
+                if (k === 'c') toggleCamMode();
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || e.key === 'ArrowUp') Controls.up = false;
+                if (k === 's' || e.key === 'ArrowDown') Controls.down = false;
+                if (k === 'a' || e.key === 'ArrowLeft') Controls.left = false;
+                if (k === 'd' || e.key === 'ArrowRight') Controls.right = false;
+                if (e.key === 'Shift') Controls.run = false;
+            });
+        }
+
+        function toggleModal(id, show) {
+            document.getElementById(id).style.display = show ? 'flex' : 'none';
+        }
+
+        function updateUIStats() {
+            document.getElementById('lobby-cash').innerText = GameState.cash;
+            document.getElementById('hud-cash').innerText = GameState.cash;
+            document.getElementById('lobby-lvl').innerText = GameState.level;
+            document.getElementById('play-btn-lvl').innerText = GameState.level;
+            document.getElementById('hud-weapon').innerText = GameState.weapon;
+            document.getElementById('hud-bag').innerText = GameState.bagItem || 'Empty';
+        }
+
+        function showBanner(msg) {
+            const b = document.getElementById('toast-banner');
+            b.innerText = msg;
+            b.style.display = 'block';
+            setTimeout(() => { b.style.display = 'none'; }, 2800);
+        }
+    </script>
+</body>
+</html>
